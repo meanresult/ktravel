@@ -12,6 +12,7 @@ RUN npm config set fetch-retry-maxtimeout 120000 && \
 # 기본 패키지 설치
 RUN npm install --loglevel verbose
 
+
 # react-icons, react-calendar, MUI 관련 패키지 명시적 설치
 RUN npm install react-icons@^4.12.0 \
     react-calendar@^4.6.1 \

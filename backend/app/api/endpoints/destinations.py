@@ -7,7 +7,7 @@ from typing import List
 from datetime import datetime
 
 from app.database.connection import get_db_dependency
-from app.services.destination_service import DestinationService
+from app.database.queries.destination_queries import DestinationService  # ← 호환성 클래스 사용
 from app.core.deps import get_current_user
 
 router = APIRouter(prefix="/destinations", tags=["destinations"])

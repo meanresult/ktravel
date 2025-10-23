@@ -8,6 +8,8 @@ import Concept_LoginPage from './pages/Concept_LoginPage.jsx';
 import KpopFestival_MapLayout from './pages/KpopFestival_MapLayout.jsx';
 import KDH_ChatbotMapLayout from './pages/KDH_ChatbotMapLayout.jsx';
 import FestivalPage from './pages/FestivalPage.jsx';
+console.log('CLIENT_ID:', process.env.REACT_APP_NAVER_MAPS_CLIENT_ID);
+
 
 function App() {
   return (

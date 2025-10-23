@@ -3,8 +3,8 @@ import React, { useEffect, useRef } from 'react';
 
 // .env 파일에서 키 값 가져오기 (Vite 환경)
 
-const NAVER_MAPS_CLIENT_ID ="lqri8w9xmo"
-//const NAVER_MAPS_CLIENT_ID = import.meta.env.VITE_NAVER_MAPS_CLIENT_ID || '';
+//const NAVER_MAPS_CLIENT_ID ="lqri8w9xmo"
+const NAVER_MAPS_CLIENT_ID = process.env.REACT_APP_NAVER_MAPS_CLIENT_ID;
 const NAVER_MAPS_URL = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${NAVER_MAPS_CLIENT_ID}&language=en&submodules=geocoder`;
 
 const NaverMap = () => {
