@@ -6,9 +6,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_
 from typing import List, Optional
 from datetime import date, datetime
-from app.database.connection import get_db
-from app.models.fastival import Festival
-from app.schemas import (
+from app.database.connection import get_db  # ← backend. 제거
+from app.models.festival import Festival     # ← backend. 제거
+from app.schemas import (                    # ← backend. 제거
     FestivalResponse,
     FestivalSummary,
     FestivalsResponse

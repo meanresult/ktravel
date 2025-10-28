@@ -3,10 +3,10 @@ from sqlalchemy.sql import func
 from app.database.connection import Base
 
 class Festival(Base):
-    __tablename__ = "fastival"  # 실제 테이블명 사용
+    __tablename__ = "festival"  # 실제 테이블명 사용
     
     # 실제 테이블 구조에 맞춘 기본 필드들
-    fastival_id = Column(Integer, primary_key=True, index=True)
+    festival_id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False, index=True)
     description = Column(Text, nullable=True)
     
@@ -21,4 +21,4 @@ class Festival(Base):
     # location, organizer, image_url 등이 있을 수 있음
     
     def __repr__(self):
-        return f"<Festival(fastival_id={self.fastival_id}, title='{self.title}', start_date='{self.start_date}')>"
+        return f"<Festival(festival_id={self.festival_id}, title='{self.title}', start_date='{self.start_date}')>"

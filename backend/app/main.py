@@ -1,10 +1,11 @@
 """
 FastAPI 메인 애플리케이션
 """
+from app.api.endpoints import festival
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.endpoints import auth, chat, destinations,festival
+from app.api.endpoints import auth, chat, destinations
 
 # FastAPI 앱 생성
 app = FastAPI(

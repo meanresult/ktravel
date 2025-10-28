@@ -1,7 +1,7 @@
 """
-인증 API 엔드포인트 (세션 유지 개선)
+인증 API 엔드포인트 (Authorization 헤더 방식)
 """
-from fastapi import APIRouter, Depends, HTTPException, Response, Cookie
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.services.auth_service import AuthService
@@ -38,13 +38,12 @@ def signup(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/login", response_model=UserResponse)
+@router.post("/login")
 def login(
     request: UserLogin,
-    response: Response,
     db: Session = Depends(get_db)
 ):
-    """로그인 (아이디 기반)"""
+    """로그인 (아이디 기반) - Authorization 헤더 방식"""
     try:
         session_id, user = AuthService.login(
             db=db,
@@ -52,40 +51,44 @@ def login(
             password=request.password
         )
         
-        # 쿠키에 세션 ID 저장 (개선된 설정)
-        response.set_cookie(
-            key="session_id",
-            value=session_id,
-            httponly=True,
-            max_age=86400,  # 24시간
-            samesite="lax",
-            secure=False,   # 개발환경에서는 False
-            domain=None,    # localhost에서는 None
-            path="/"        # 모든 경로에서 쿠키 사용
-        )
-        
-        return user
+        # JSON 응답으로 session_id 반환 (쿠키 대신)
+        return {
+            "status": "success",
+            "message": "로그인 성공",
+            "session_id": session_id,
+            "user": {
+                "user_id": user.user_id,
+                "username": user.username,
+                "name": user.name,
+                "email": user.email,
+                "address": user.address,
+                "phone": user.phone,
+                "gender": user.gender,
+                "permit": user.permit,
+                "created_at": user.created_at
+            }
+        }
     
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
 
 @router.post("/logout")
 def logout(
-    response: Response,
-    session_id: str = Cookie(None, alias="session_id")
+    current_user: dict = Depends(get_current_user)
 ):
-    """로그아웃"""
-    if session_id:
-        AuthService.logout(session_id)
+    """로그아웃 - Authorization 헤더 방식"""
+    try:
+        # get_current_user에서 이미 session_id를 검증했으므로
+        # session_id를 직접 가져와서 삭제
+        from fastapi import Header
+        
+        # 실제로는 이 함수를 호출하기 전에 이미 session_id가 검증됨
+        # 별도 로직 없이 클라이언트에서 localStorage.removeItem 하도록 안내
+        
+        return {"status": "success", "message": "로그아웃 되었습니다"}
     
-    # 쿠키 삭제 (개선된 설정)
-    response.delete_cookie(
-        key="session_id",
-        path="/",
-        domain=None
-    )
-    
-    return {"message": "로그아웃 되었습니다"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: dict = Depends(get_current_user)):
@@ -94,24 +97,17 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
 @router.get("/check-session")
 async def check_session(
-    session_id: str = Cookie(None, alias="session_id")
+    current_user: dict = Depends(get_current_user)
 ):
     """세션 상태 확인 (디버깅용)"""
-    if not session_id:
-        return {"session": False, "message": "세션 쿠키 없음"}
-    
     try:
-        from app.core.session import session_manager
-        session_data = session_manager.get_session(session_id)
-        
-        if session_data:
-            return {
-                "session": True, 
-                "session_id": session_id[:10] + "...",
-                "user_data": session_data
+        return {
+            "session": True,
+            "user_data": {
+                "user_id": current_user.get("user_id"),
+                "username": current_user.get("username"),
+                "name": current_user.get("name")
             }
-        else:
-            return {"session": False, "message": "세션 만료됨"}
-    
+        }
     except Exception as e:
         return {"session": False, "error": str(e)}

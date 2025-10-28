@@ -1,18 +1,18 @@
-from fastapi import Cookie, HTTPException, status, Depends
+from fastapi import Header, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from app.core.session import session_manager
 from app.database.connection import get_db
 from app.models.users import User
 
 async def get_current_user(
-    session_id: str = Cookie(None, alias="session_id"),
+    authorization: str = Header(None),
     db: Session = Depends(get_db)
 ) -> dict:
     """
-    현재 로그인한 사용자 정보 가져오기 (ORM 버전)
+    현재 로그인한 사용자 정보 가져오기 (세션 방식 + Authorization Header)
     
     Args:
-        session_id: 쿠키에서 가져온 세션 ID
+        authorization: Authorization 헤더에서 가져온 "Bearer session_id"
         db: ORM Session
     
     Returns:
@@ -21,10 +21,21 @@ async def get_current_user(
     Raises:
         HTTPException: 인증 실패 시
     """
-    if not session_id:
+    if not authorization:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="로그인이 필요합니다"
+        )
+    
+    # "Bearer session_id" 형태에서 session_id 추출
+    try:
+        scheme, session_id = authorization.split(" ", 1)
+        if scheme.lower() != "bearer":
+            raise ValueError("잘못된 스킴")
+    except (ValueError, IndexError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="잘못된 인증 형식입니다. 'Bearer session_id' 형태여야 합니다"
         )
     
     # 세션 데이터 가져오기

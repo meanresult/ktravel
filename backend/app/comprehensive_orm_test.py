@@ -14,7 +14,7 @@ def comprehensive_orm_test():
         from app.models.destination import Destination
         from app.models.users import User
         from app.models.conversation import Conversation
-        from app.models.fastival import Festival
+        from backend.app.models.festival import Festival
         print("✅ 모든 모델 import 성공!")
         
         # 2. 모델 정보 확인
