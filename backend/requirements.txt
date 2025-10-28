@@ -6,6 +6,8 @@ python-multipart==0.0.6
 # 데이터베이스 (Raw SQL)
 pymysql==1.1.0
 cryptography==41.0.7
+sqlalchemy==2.0.23
+alembic==1.13.0
 
 # 세션 관리 (Redis)
 redis==5.0.1

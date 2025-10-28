@@ -1,67 +1,42 @@
-import pymysql
-from pymysql.cursors import DictCursor
-from contextlib import contextmanager
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
 from app.core.config import settings
+from fastapi import Depends
 
-# 데이터베이스 연결 설정
-DB_CONFIG = {
-    'host': settings.DATABASE_HOST,
-    'port': settings.DATABASE_PORT,
-    'user': settings.DATABASE_USER,
-    'password': settings.DATABASE_PASSWORD,
-    'database': settings.DATABASE_NAME,
-    'charset': 'utf8mb4',
-    'cursorclass': DictCursor,  # 결과를 딕셔너리로 반환
-    'autocommit': False
-}
+# SQLAlchemy 엔진 생성
+# 실제 config.py의 변수명 사용하여 DATABASE_URL 생성
+DATABASE_URL = f"mysql+pymysql://{settings.DATABASE_USER}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{settings.DATABASE_NAME}?charset=utf8mb4"
 
-def get_db_connection():
-    """데이터베이스 연결 생성"""
-    return pymysql.connect(**DB_CONFIG)
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+    pool_recycle=300,
+    pool_size=10,
+    max_overflow=20,
+    echo=True  # 개발 시에만 사용, 프로덕션에서는 False
+)
 
-@contextmanager
-def get_db():
-    """
-    데이터베이스 컨텍스트 매니저
+# 세션 로컬 클래스
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Base 클래스 (모든 ORM 모델의 부모)
+Base = declarative_base()
+
+# FastAPI 의존성으로 사용할 DB 세션
+def get_db() -> Session:
+    """ORM 세션 의존성 (FastAPI에서 Depends로 사용)"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# 테이블 생성 함수 (나중에 사용)
+def create_tables():
+    """모든 테이블을 데이터베이스에 생성"""
+    Base.metadata.create_all(bind=engine)
     
-    사용 예:
-    with get_db() as (conn, cursor):
-        cursor.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
-        user = cursor.fetchone()
-    """
-    conn = None
-    cursor = None
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        yield conn, cursor
-        conn.commit()
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        raise e
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
-
-# FastAPI 의존성으로 사용할 함수
 def get_db_dependency():
-    """FastAPI 엔드포인트에서 사용할 DB 의존성"""
-    conn = None
-    cursor = None
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        yield conn, cursor
-        conn.commit()
-    except Exception:
-        if conn:
-            conn.rollback()
-        raise
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+    """FastAPI Depends 래퍼 함수"""
+    return Depends(get_db)

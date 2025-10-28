@@ -1,28 +1,55 @@
 """
-인증 API 엔드포인트 (세션 유지 개선)
+인증 API 엔드포인트
 """
 from fastapi import APIRouter, Depends, HTTPException, Response, Cookie
-from sqlalchemy.orm import Session
-from app.database.connection import get_db
+from pydantic import BaseModel, EmailStr
+from typing import Optional
+from datetime import date
+
+from app.database.connection import get_db_dependency
 from app.services.auth_service import AuthService
-from app.schemas import (
-    UserCreate,
-    UserResponse,
-    UserLogin
-)
 from app.core.deps import get_current_user
+from app.database.connection import get_db 
+
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+# Request/Response 모델
+class SignupRequest(BaseModel):
+    username: str  # 로그인 아이디
+    email: EmailStr
+    password: str
+    name: str
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    gender: Optional[str] = None
+    date: Optional[date] = None
+
+class LoginRequest(BaseModel):
+    username: str  # 아이디로 로그인
+    password: str
+
+class UserResponse(BaseModel):
+    user_id: int
+    username: str
+    email: str
+    name: str
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    gender: Optional[str] = None
+    permit: bool
+
 @router.post("/signup", response_model=UserResponse)
 def signup(
-    request: UserCreate,
-    db: Session = Depends(get_db)
+    request: SignupRequest,
+    db = Depends(get_db_dependency)
 ):
     """회원가입"""
+    conn, cursor = db
+    
     try:
         user = AuthService.signup(
-            db=db,
+            conn, cursor,
             username=request.username,
             email=request.email,
             password=request.password,
@@ -40,28 +67,27 @@ def signup(
 
 @router.post("/login", response_model=UserResponse)
 def login(
-    request: UserLogin,
+    request: LoginRequest,
     response: Response,
-    db: Session = Depends(get_db)
+    db = Depends(get_db_dependency)
 ):
     """로그인 (아이디 기반)"""
+    conn, cursor = db
+    
     try:
         session_id, user = AuthService.login(
-            db=db,
+            conn, cursor,
             username=request.username,
             password=request.password
         )
         
-        # 쿠키에 세션 ID 저장 (개선된 설정)
+        # 쿠키에 세션 ID 저장
         response.set_cookie(
             key="session_id",
             value=session_id,
             httponly=True,
             max_age=86400,  # 24시간
-            samesite="lax",
-            secure=False,   # 개발환경에서는 False
-            domain=None,    # localhost에서는 None
-            path="/"        # 모든 경로에서 쿠키 사용
+            samesite="lax"
         )
         
         return user
@@ -78,12 +104,8 @@ def logout(
     if session_id:
         AuthService.logout(session_id)
     
-    # 쿠키 삭제 (개선된 설정)
-    response.delete_cookie(
-        key="session_id",
-        path="/",
-        domain=None
-    )
+    # 쿠키 삭제
+    response.delete_cookie("session_id")
     
     return {"message": "로그아웃 되었습니다"}
 
@@ -91,27 +113,3 @@ def logout(
 async def get_me(current_user: dict = Depends(get_current_user)):
     """현재 로그인한 사용자 정보"""
     return current_user
-
-@router.get("/check-session")
-async def check_session(
-    session_id: str = Cookie(None, alias="session_id")
-):
-    """세션 상태 확인 (디버깅용)"""
-    if not session_id:
-        return {"session": False, "message": "세션 쿠키 없음"}
-    
-    try:
-        from app.core.session import session_manager
-        session_data = session_manager.get_session(session_id)
-        
-        if session_data:
-            return {
-                "session": True, 
-                "session_id": session_id[:10] + "...",
-                "user_data": session_data
-            }
-        else:
-            return {"session": False, "message": "세션 만료됨"}
-    
-    except Exception as e:
-        return {"session": False, "error": str(e)}
