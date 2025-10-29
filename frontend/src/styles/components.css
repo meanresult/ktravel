@@ -238,7 +238,7 @@
 }
 
 .typing-indicator {
-  background: white;
+  background: rgb(156, 77, 156);
   padding: 16px 20px;
   border-radius: 18px;
   display: flex;

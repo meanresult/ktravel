@@ -20,20 +20,25 @@ function LoginForm() {
     });
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
+    
     try {
-      await authService.login(formData.username, formData.password);
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err);
+        // authService 사용 (이미 session_id 저장 로직 포함)
+        const response = await authService.login(formData.username, formData.password);
+        
+        // 로그인 성공 시 메인 페이지로 이동
+        navigate('/');
+        
+    } catch (error) {
+        console.error('Login error:', error);
+        setError(error.message || '로그인에 실패했습니다.');
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
   return (
     <div className="auth-container">

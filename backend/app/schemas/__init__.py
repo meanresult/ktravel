@@ -18,7 +18,10 @@ from .destination_schema import (
     DestinationResponse,
     DestinationSummary,
     UserDestinationsResponse,
-    DestinationFromConversation
+    DestinationFromConversation,
+    DestinationAddRequest,
+    DestinationAddResponse,
+    DestinationCreateExtended
 )
 
 # Conversation 스키마들
@@ -56,6 +59,7 @@ __all__ = [
     "DestinationBase", "DestinationCreate", "DestinationUpdate",
     "DestinationResponse", "DestinationSummary", "UserDestinationsResponse",
     "DestinationFromConversation",
+    "DestinationAddRequest", "DestinationAddResponse", "DestinationCreateExtended",
     
     # Conversation
     "ConversationBase", "ConversationCreate", "ConversationUpdate", 

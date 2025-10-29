@@ -8,9 +8,14 @@ from app.database.connection import get_db
 from app.models.destination import Destination
 from app.schemas import (
     DestinationResponse, 
-    DestinationSummary
+    DestinationSummary,
+    DestinationAddRequest,  # 새로 추가
+    DestinationAddResponse  # 새로 추가
 )
 from app.core.deps import get_current_user
+
+
+
 
 router = APIRouter(prefix="/destinations", tags=["destinations"])
 
@@ -119,3 +124,50 @@ async def get_destination(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"조회 오류: {str(e)}")
+
+@router.post("/add", response_model=DestinationAddResponse)
+async def add_destination(
+    request: DestinationAddRequest,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """축제/명소를 destinations 테이블에 추가"""
+    
+    try:
+        # 중복 체크 (reference_id가 있는 경우만)
+        if request.reference_id and request.place_type > 0:
+            is_duplicate = Destination.check_duplicate(
+                db, 
+                current_user['user_id'], 
+                request.reference_id, 
+                request.place_type
+            )
+            
+            if is_duplicate:
+                return DestinationAddResponse(
+                    success=False,
+                    message="이미 추가된 목적지입니다."
+                )
+        
+        # destinations 테이블에 추가
+        new_destination = Destination.add_destination(
+            db,
+            user_id=current_user['user_id'],
+            name=request.name,
+            place_type=request.place_type,
+            reference_id=request.reference_id,
+            latitude=request.latitude,
+            longitude=request.longitude
+        )
+        
+        return DestinationAddResponse(
+            success=True,
+            message=f"'{request.name}'이(가) 목적지에 추가되었습니다!",
+            destination_id=new_destination.destination_id
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"목적지 추가 실패: {str(e)}"
+        )

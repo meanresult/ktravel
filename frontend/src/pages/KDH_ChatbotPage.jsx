@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';  // ← useState 추가 확인
+import React, { useState, useEffect, useRef } from 'react';
 import '../styles/KDH_ChatbotPage.css';
 import ChatMessage from '../components/chat/ChatMessage';
 import ChatInput from '../components/chat/ChatInput';
 
 function KDH_ChatbotPage() {
-    // 🔥 state 선언 추가
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef(null);
@@ -41,17 +40,26 @@ function KDH_ChatbotPage() {
         setLoading(true);
 
         try {
-            // API 호출
+            // Authorization 헤더 추가
+            const sessionId = localStorage.getItem('session_id');
+            if (!sessionId) {
+                throw new Error('로그인이 필요합니다');
+            }
+
+            // API 호출 - Authorization 헤더 방식
             const response = await fetch('http://localhost:8000/api/chat/send', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionId}`
                 },
-                credentials: 'include',
                 body: JSON.stringify({ message: text })
             });
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    throw new Error('로그인이 만료되었습니다. 다시 로그인해주세요.');
+                }
                 throw new Error('Failed to send message');
             }
 
@@ -67,17 +75,35 @@ function KDH_ChatbotPage() {
             };
             setMessages(prev => [...prev, aiMessage]);
 
+            // 🎯 축제 정보가 있으면 지도에 마커 추가
+            if (data.has_festivals && data.map_markers && data.map_markers.length > 0) {
+                if (window.addFestivalMarkers) {
+                    window.addFestivalMarkers(data.map_markers);
+                }
+            }
+
         } catch (error) {
             console.error('Error sending message:', error);
+            
             // 에러 메시지
             const errorMessage = {
                 id: Date.now() + 1,
-                text: 'Sorry, something went wrong. Please try again.',
+                text: error.message === '로그인이 필요합니다' || error.message === '로그인이 만료되었습니다. 다시 로그인해주세요.' 
+                    ? error.message 
+                    : 'Sorry, something went wrong. Please try again.',
                 isUser: false,
                 timestamp: new Date(),
                 isError: true
             };
             setMessages(prev => [...prev, errorMessage]);
+
+            // 로그인 만료 시 메인 페이지로 이동
+            if (error.message.includes('로그인')) {
+                localStorage.removeItem('session_id');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            }
         } finally {
             setLoading(false);
         }

@@ -1,4 +1,4 @@
-// ConceptMainPage.jsx (로직과 구조 전용)
+// ConceptMainPage.jsx (로직과 구조 전용) - 인증 방식 수정됨
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -46,16 +46,29 @@ const ConceptMainPage = () => {
 
     const checkLoginStatus = async () => {
         try {
+            const sessionId = localStorage.getItem('session_id');
+            if (!sessionId) {
+                setIsLoggedIn(false);
+                return;
+            }
+
             const response = await fetch('http://localhost:8000/api/auth/me', {
-                credentials: 'include',
+                headers: {
+                    'Authorization': `Bearer ${sessionId}`
+                }
             });
 
             if (response.ok) {
                 const userData = await response.json();
                 setIsLoggedIn(true);
                 setCurrentUser(userData);
+            } else {
+                // 세션이 만료되었거나 유효하지 않음
+                localStorage.removeItem('session_id');
+                setIsLoggedIn(false);
             }
         } catch (err) {
+            localStorage.removeItem('session_id');
             setIsLoggedIn(false);
         }
     };
@@ -82,7 +95,6 @@ const ConceptMainPage = () => {
                     username: formData.username,
                     password: formData.password,
                 }),
-                credentials: 'include',
             });
 
             if (!response.ok) {
@@ -90,15 +102,22 @@ const ConceptMainPage = () => {
                 throw new Error(errorData.detail || 'Login failed');
             }
 
-            const userData = await response.json();
+            const responseData = await response.json();
             
-            if (rememberMe) {
-                localStorage.setItem('user', JSON.stringify(userData));
-            }
+            // session_id를 localStorage에 저장
+            if (responseData.session_id) {
+                localStorage.setItem('session_id', responseData.session_id);
+                
+                if (rememberMe) {
+                    localStorage.setItem('user', JSON.stringify(responseData.user));
+                }
 
-            setIsLoggedIn(true);
-            setCurrentUser(userData);
-            setFormData({ username: '', password: '' });
+                setIsLoggedIn(true);
+                setCurrentUser(responseData.user);
+                setFormData({ username: '', password: '' });
+            } else {
+                throw new Error('로그인 응답에 session_id가 없습니다.');
+            }
         } catch (err) {
             setError(err.message || 'An error occurred during login');
         } finally {
@@ -108,16 +127,28 @@ const ConceptMainPage = () => {
 
     const handleLogout = async () => {
         try {
-            await fetch('http://localhost:8000/api/auth/logout', {
-                method: 'POST',
-                credentials: 'include',
-            });
+            const sessionId = localStorage.getItem('session_id');
+            
+            if (sessionId) {
+                await fetch('http://localhost:8000/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${sessionId}`
+                    }
+                });
+            }
 
+            localStorage.removeItem('session_id');
             localStorage.removeItem('user');
             setIsLoggedIn(false);
             setCurrentUser(null);
         } catch (err) {
             console.error('Logout error:', err);
+            // 에러가 나도 로컬 상태는 정리
+            localStorage.removeItem('session_id');
+            localStorage.removeItem('user');
+            setIsLoggedIn(false);
+            setCurrentUser(null);
         }
     };
     // ************************
