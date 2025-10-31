@@ -35,9 +35,8 @@ class ChatResponse(BaseModel):
     conversation_id: int
     extracted_destinations: Optional[List[str]] = None
 
-###########################################
-# 당장 안 쓰는 스키마들 - 필요할 때 활성화
-###########################################
+########################################
+# 아래는 현재 사용하지 않는 스키마들
 
 # # 수정용 스키마 (거의 사용하지 않을 것 같지만)
 # class ConversationUpdate(BaseModel):
@@ -50,7 +49,7 @@ class ChatResponse(BaseModel):
 #     convers_id: int
 #     question: str = Field(..., max_length=100)  # 질문 일부만
 #     datetime: datetime
-#     
+    
 #     class Config:
 #         from_attributes = True
 

@@ -2,72 +2,89 @@
 from .user_schema import (
     UserBase,
     UserCreate, 
-    UserUpdate,
     UserResponse,
     UserLogin,
     Token,
-    TokenData,
-    UserSummary
+    TokenData
 )
 
 # Destination 스키마들  
 from .destination_schema import (
     DestinationBase,
     DestinationCreate,
-    DestinationUpdate, 
     DestinationResponse,
-    DestinationSummary,
-    UserDestinationsResponse,
     DestinationFromConversation,
     DestinationAddRequest,
-    DestinationAddResponse,
-    DestinationCreateExtended
+    DestinationAddResponse
 )
 
 # Conversation 스키마들
 from .conversation_schema import (
     ConversationBase,
     ConversationCreate,
-    ConversationUpdate,
     ConversationResponse,
-    ConversationSummary,
-    UserConversationsResponse,
     ChatMessage,
-    ChatResponse,
-    ConversationHistory
+    ChatResponse
 )
 
 # Festival 스키마들
 from .festival_schema import (
     FestivalBase,
-    FestivalCreate,
-    FestivalUpdate,
     FestivalResponse,
-    FestivalSummary,
-    FestivalsResponse,
-    OngoingFestivalsResponse,
-    FestivalSearch,
-    FestivalDateRange
+    FestivalCard,
+    MapMarker
 )
 
 __all__ = [
     # User
-    "UserBase", "UserCreate", "UserUpdate", "UserResponse", 
-    "UserLogin", "Token", "TokenData", "UserSummary",
+    "UserBase", "UserCreate", "UserResponse", 
+    "UserLogin", "Token", "TokenData",
     
     # Destination  
-    "DestinationBase", "DestinationCreate", "DestinationUpdate",
-    "DestinationResponse", "DestinationSummary", "UserDestinationsResponse",
-    "DestinationFromConversation",
-    "DestinationAddRequest", "DestinationAddResponse", "DestinationCreateExtended",
+    "DestinationBase", "DestinationCreate",
+    "DestinationResponse", "DestinationFromConversation",
+    "DestinationAddRequest", "DestinationAddResponse",
     
     # Conversation
-    "ConversationBase", "ConversationCreate", "ConversationUpdate", 
-    "ConversationResponse", "ConversationSummary", "UserConversationsResponse",
-    "ChatMessage", "ChatResponse", "ConversationHistory",
+    "ConversationBase", "ConversationCreate", 
+    "ConversationResponse", "ChatMessage", "ChatResponse",
     
     # Festival
-    "FestivalBase", "FestivalCreate", "FestivalUpdate",
-    "FestivalResponse", "FestivalSummary", "FestivalsResponse", 
-    "OngoingFestivalsResponse", "FestivalSearch", "FestivalDateRange"
+    "FestivalBase", "FestivalResponse", "FestivalCard", "MapMarker"
 ]
+
+################################################
+# 아래는 현재 사용하지 않는 스키마들 (주석 처리됨)
+
+# # User 스키마들 (미사용)
+# from .user_schema import (
+#     UserUpdate,
+#     UserSummary
+# )
+
+# # Destination 스키마들 (미사용)
+# from .destination_schema import (
+#     DestinationUpdate, 
+#     DestinationSummary,
+#     UserDestinationsResponse,
+#     DestinationCreateExtended
+# )
+
+# # Conversation 스키마들 (미사용)
+# from .conversation_schema import (
+#     ConversationUpdate,
+#     ConversationSummary,
+#     UserConversationsResponse,
+#     ConversationHistory
+# )
+
+# # Festival 스키마들 (미사용)
+# from .festival_schema import (
+#     FestivalCreate,
+#     FestivalUpdate,
+#     FestivalSummary,
+#     FestivalsResponse,
+#     OngoingFestivalsResponse,
+#     FestivalSearch,
+#     FestivalDateRange
+# )

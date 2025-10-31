@@ -119,6 +119,7 @@ class ChatService:
             if lat and lng and lat != 0.0 and lng != 0.0:
                 markers.append({
                     "id": festival['festival_id'],
+                    "festival_id": festival['festival_id'],  # 🎯 이거 추가!
                     "title": festival['title'],
                     "latitude": float(lat),
                     "longitude": float(lng),

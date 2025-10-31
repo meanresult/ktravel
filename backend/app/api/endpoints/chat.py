@@ -10,7 +10,6 @@ from app.database.connection import get_db
 from app.services.chat_service import ChatService
 from app.schemas import (
     ChatMessage,
-    ConversationSummary
 )
 from app.core.deps import get_current_user
 
@@ -54,23 +53,26 @@ async def send_message(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"채팅 오류: {str(e)}")
 
-@router.get("/history", response_model=List[ConversationSummary])
-async def get_chat_history(
-    limit: int = 50,
-    current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    대화 히스토리 조회
-    """
-    try:
-        conversations = ChatService.get_conversation_history(
-            db=db,
-            user_id=current_user['user_id'],
-            limit=limit
-        )
+###################################################
+# 아래는 현재 사용하지 않는 엔드포인트 (주석 처리)
+
+# @router.get("/history", response_model=List[ConversationSummary])
+# async def get_chat_history(
+#     limit: int = 50,
+#     current_user: dict = Depends(get_current_user),
+#     db: Session = Depends(get_db)
+# ):
+#     """
+#     대화 히스토리 조회
+#     """
+#     try:
+#         conversations = ChatService.get_conversation_history(
+#             db=db,
+#             user_id=current_user['user_id'],
+#             limit=limit
+#         )
         
-        return conversations
+#         return conversations
     
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"히스토리 조회 오류: {str(e)}")
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"히스토리 조회 오류: {str(e)}")

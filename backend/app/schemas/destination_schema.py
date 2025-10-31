@@ -28,22 +28,31 @@ class DestinationResponse(DestinationBase):
     class Config:
         from_attributes = True
 
+# 대화에서 추출된 여행지 생성용
+class DestinationFromConversation(BaseModel):
+    names: list[str] = Field(..., min_items=1)
+    conversation_id: int = Field(..., gt=0)
+
 # 🎯 축제/명소 추가용 새로운 스키마들
 class DestinationAddRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
-    place_type: int = Field(default=0, ge=0, le=2)  # 0=일반, 1=명소, 2=축제
-    reference_id: Optional[int] = Field(None, gt=0)  # festival_id 또는 attr_id
+    day_number: int  # 🎯 schedule_id → day_number
+    place_type: int = Field(default=2, ge=0, le=2, description="0=일반, 1=명소, 2=축제")
+    reference_id: Optional[int] = Field(None, gt=0, description="festival_id 또는 attr_id")
     latitude: Optional[float] = Field(None, ge=-90, le=90)
     longitude: Optional[float] = Field(None, ge=-180, le=180)
+    notes: Optional[str] = Field(None, max_length=500, description="사용자 메모")  # 추가
+    visit_order: Optional[int] = None  # 🎯 추가
+
 
 class DestinationAddResponse(BaseModel):
     success: bool
     message: str
     destination_id: Optional[int] = None
+    schedule_id: int  # 🎯 day_number → schedule_id
 
-#######################
-# 당장 안 쓰는 스키마들 - 필요할 때 활성화
-#######################
+####################################
+# 아래는 현재 사용하지 않는 스키마들
 
 # # 수정용 스키마
 # class DestinationUpdate(BaseModel):
@@ -53,7 +62,7 @@ class DestinationAddResponse(BaseModel):
 # class DestinationSummary(BaseModel):
 #     destination_id: int
 #     name: str
-#     
+    
 #     class Config:
 #         from_attributes = True
 
@@ -61,11 +70,6 @@ class DestinationAddResponse(BaseModel):
 # class UserDestinationsResponse(BaseModel):
 #     destinations: list[DestinationResponse]
 #     total_count: int
-
-# # 대화에서 추출된 여행지 생성용
-# class DestinationFromConversation(BaseModel):
-#     names: list[str] = Field(..., min_items=1)
-#     conversation_id: int = Field(..., gt=0)
 
 # # 🎯 기존 DestinationCreate도 확장
 # class DestinationCreateExtended(DestinationBase):
