@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from typing import List
+from urllib.parse import quote_plus
 
 class Settings(BaseSettings):
     # 데이터베이스
@@ -17,14 +18,23 @@ class Settings(BaseSettings):
     SESSION_EXPIRE_HOURS: int = 24
     
     # OpenAI
-    OPENAI_API_KEY: str
+    OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
     
-    # Kakao API (Phase 2에서 사용)
+    # Kakao API
     KAKAO_REST_API_KEY: str = ""
     
     # CORS
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000" ]
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    
+    # Qdrant 설정
+    QDRANT_URL: str = "http://localhost:6333"
+    QDRANT_COLLECTION_NAME: str = "seoul-festival"
+    
+    @property
+    def DATABASE_URL(self) -> str:
+        encoded_password = quote_plus(self.DATABASE_PASSWORD)
+        return f"mysql+pymysql://{self.DATABASE_USER}:{encoded_password}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
     
     class Config:
         env_file = ".env"

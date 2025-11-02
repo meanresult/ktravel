@@ -43,3 +43,14 @@ def root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+
+
+@app.on_event("startup")
+async def startup_event():
+    try:
+        from qdrant_client import QdrantClient
+        client = QdrantClient(url="http://localhost:6333")
+        print("✅ Qdrant 연결 성공")
+    except Exception as e:
+        print(f"❌ Qdrant 연결 실패: {e}")

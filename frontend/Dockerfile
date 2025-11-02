@@ -19,7 +19,8 @@ RUN npm install react-icons@^4.12.0 \
     @mui/material@^5.15.13 \
     @mui/icons-material@^5.15.13 \
     @emotion/react@^11.11.4 \
-    @emotion/styled@^11.11.0
+    @emotion/styled@^11.11.0 \
+    lucide-react@^0.548.0
 
 # 설치 확인
 RUN echo "=== Checking react-icons ===" && \

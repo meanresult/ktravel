@@ -2,6 +2,9 @@
 from typing import Dict, Any, List
 from sqlalchemy.orm import Session
 import json
+import os
+from langchain_openai import OpenAIEmbeddings
+from qdrant_client import QdrantClient
 
 from app.models.conversation import Conversation  
 from app.models.festival import Festival
@@ -9,11 +12,14 @@ from app.utils.openai_client import chat_with_gpt
 
 class ChatService:
     
+    # 🎯 Qdrant 설정
+    QDRANT_URL = "http://172.20.0.1:6333"  # 🎯 실제 호스트 IP
+    COLLECTION_NAME = "seoul-festival"
+    
     @staticmethod
     def send_message(db: Session, user_id: int, message: str) -> Dict[str, Any]:
         """
         메시지 처리 및 응답 생성
-        GPT가 축제 검색 필요 여부 판단 + 키워드 추출
         """
         try:
             # 1. GPT에게 축제 검색 필요 여부 + 키워드 추출 요청
@@ -21,28 +27,28 @@ class ChatService:
             
             festivals_data = []
             if festival_query_result.get('is_festival_query') and festival_query_result.get('keyword'):
-                # 2. DB LIKE 검색
-                festival = ChatService._search_festival(db, festival_query_result['keyword'])
-                if festival:
-                    festivals_data = [festival.to_dict()]
+                # 2. 🎯 벡터 검색으로 가장 유사한 1개만 가져오기
+                festival_data = ChatService._search_best_festival(festival_query_result['keyword'])
+                if festival_data:
+                    festivals_data = [festival_data]
             
             # 3. GPT 최종 응답 생성
             ai_response = ChatService._generate_final_response(message, festivals_data)
             
-            # 4. 대화 저장 (올바른 필드명 사용)
+            # 4. 대화 저장
             conversation = Conversation(
                 user_id=user_id,
-                question=message,        # message → question 수정
+                question=message,
                 response=ai_response
             )
             db.add(conversation)
             db.commit()
             db.refresh(conversation)
             
-            # 5. 응답 구성 (올바른 필드명 사용)
+            # 5. 응답 구성 (기존 RDB 응답 형식 유지)
             return {
                 "response": ai_response,
-                "convers_id": conversation.convers_id,  # conversation_id → convers_id 수정
+                "convers_id": conversation.convers_id,
                 "extracted_destinations": [],  # 기존 구조 유지
                 "festivals": festivals_data,
                 "has_festivals": len(festivals_data) > 0,
@@ -90,7 +96,6 @@ class ChatService:
                 result = json.loads(gpt_response)
                 return result
             except json.JSONDecodeError:
-                # JSON 파싱 실패 시 기본값
                 return {"is_festival_query": False}
                 
         except Exception as e:
@@ -98,18 +103,70 @@ class ChatService:
             return {"is_festival_query": False}
     
     @staticmethod
-    def _search_festival(db: Session, keyword: str) -> Festival:
+    def _search_best_festival(keyword: str) -> Dict[str, Any]:
         """
-        DB LIKE 검색으로 축제 찾기 (첫 번째 결과)
+        🎯 벡터 검색으로 가장 유사한 축제 1개만 반환
+        Document 메타데이터를 그대로 활용하여 기존 RDB 형식 유지
         """
-        return db.query(Festival).filter(
-            Festival.title.like(f'%{keyword}%')
-        ).first()
+        try:
+            # 🎯 타임아웃 설정을 포함한 Qdrant 클라이언트 연결
+            qdrant_client = QdrantClient(
+                url=ChatService.QDRANT_URL,
+                timeout=60,  # 🎯 타임아웃 60초로 증가
+                prefer_grpc=False  # 🎯 HTTP 사용 (더 안정적)
+            )
+            
+            # 임베딩 모델 준비
+            embedding_model = OpenAIEmbeddings(model="text-embedding-ada-002")
+            
+            # 검색어 임베딩 생성
+            query_embedding = embedding_model.embed_query(keyword)
+            
+            # 🎯 최적화된 벡터 검색
+            search_results = qdrant_client.search(
+                collection_name=ChatService.COLLECTION_NAME,
+                query_vector=query_embedding,
+                limit=1,  # 🎯 1개만 가져오기
+                score_threshold=0.3,  # 🎯 임계값 낮춤 (더 많은 결과 허용)
+                with_payload=True,  # 🎯 명시적으로 payload 요청
+                with_vectors=False  # 🎯 벡터는 불필요하므로 제외 (속도 향상)
+            )
+            
+            if not search_results:
+                print(f"🔍 검색 결과 없음: '{keyword}'")
+                return None
+            
+            # 가장 유사한 결과 1개
+            result = search_results[0]
+            festival_data = result.payload.get("metadata", {})
+            
+            # 🎯 기존 RDB 응답과 동일한 형식으로 변환
+            # Document 생성 시 메타데이터가 그대로 보존됨
+            formatted_data = {
+                "festival_id": festival_data.get("festival_id", festival_data.get("row")),
+                "title": festival_data.get("title"),
+                "filter_type": festival_data.get("filter_type"), 
+                "start_date": festival_data.get("start_date"),
+                "end_date": festival_data.get("end_date"),
+                "image_url": festival_data.get("image_url"),
+                "detail_url": festival_data.get("detail_url"),
+                "latitude": float(festival_data.get("latitude", 0)) if festival_data.get("latitude") else 0.0,
+                "longitude": float(festival_data.get("longitude", 0)) if festival_data.get("longitude") else 0.0,
+                "description": festival_data.get("description"),
+                "similarity_score": result.score  # 추가 정보
+            }
+            
+            print(f"🎯 검색 성공: '{formatted_data['title']}' (유사도: {result.score:.3f})")
+            return formatted_data
+            
+        except Exception as e:
+            print(f"벡터 검색 오류: {e}")
+            return None
     
-    @staticmethod
+    @staticmethod  
     def _create_map_markers(festivals_data: List[Dict]) -> List[Dict]:
         """
-        지도 마커 데이터 생성
+        지도 마커 데이터 생성 (기존 형식 유지)
         """
         markers = []
         for festival in festivals_data:
@@ -119,7 +176,7 @@ class ChatService:
             if lat and lng and lat != 0.0 and lng != 0.0:
                 markers.append({
                     "id": festival['festival_id'],
-                    "festival_id": festival['festival_id'],  # 🎯 이거 추가!
+                    "festival_id": festival['festival_id'],
                     "title": festival['title'],
                     "latitude": float(lat),
                     "longitude": float(lng),
@@ -138,7 +195,7 @@ class ChatService:
         """
         try:
             if festivals_data:
-                festival = festivals_data[0]
+                festival = festivals_data[0]  # 유일한 축제
                 
                 # 축제 정보를 포함한 자연스러운 응답 생성
                 response_messages = [
@@ -152,7 +209,7 @@ class ChatService:
 사용자 질문: {message}
 
 축제 정보:
-- 제목: {festival['title']}
+- 제목: {festival.get('title', 'N/A')}
 - 기간: {festival.get('start_date', '')} ~ {festival.get('end_date', '')}
 - 설명: {festival.get('description', '')}
 
@@ -184,7 +241,7 @@ class ChatService:
             # GPT 실패 시 기본 응답
             if festivals_data:
                 festival = festivals_data[0]
-                response = f"🎭 **{festival['title']}**에 대해 알려드릴게요!\n\n"
+                response = f"🎭 **{festival.get('title', 'N/A')}**에 대해 알려드릴게요!\n\n"
                 
                 if festival.get('start_date') and festival.get('end_date'):
                     response += f"📅 **기간**: {festival.get('start_date')} ~ {festival.get('end_date')}\n\n"
@@ -200,18 +257,18 @@ class ChatService:
     @staticmethod
     def get_conversation_history(db: Session, user_id: int, limit: int = 50) -> List[Dict]:
         """
-        대화 히스토리 조회 (올바른 필드명 사용)
+        대화 히스토리 조회
         """
         conversations = db.query(Conversation).filter(
             Conversation.user_id == user_id
-        ).order_by(Conversation.datetime.desc()).limit(limit).all()  # created_at → datetime 수정
+        ).order_by(Conversation.datetime.desc()).limit(limit).all()
         
         return [
             {
-                "conversation_id": conv.convers_id,  # conversation_id → convers_id 수정
-                "message": conv.question,            # message → question 수정
+                "conversation_id": conv.convers_id,
+                "message": conv.question,
                 "response": conv.response,
-                "created_at": conv.datetime.isoformat()  # created_at → datetime 수정
+                "created_at": conv.datetime.isoformat()
             }
             for conv in reversed(conversations)
         ]

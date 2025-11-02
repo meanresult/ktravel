@@ -4,9 +4,8 @@ from sqlalchemy.orm import sessionmaker, Session
 from app.core.config import settings
 from fastapi import Depends
 
-# SQLAlchemy 엔진 생성
-# 실제 config.py의 변수명 사용하여 DATABASE_URL 생성
-DATABASE_URL = f"mysql+pymysql://{settings.DATABASE_USER}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{settings.DATABASE_NAME}?charset=utf8mb4"
+# SQLAlchemy 엔진 생성 - settings.DATABASE_URL 사용 (이미 인코딩됨)
+DATABASE_URL = settings.DATABASE_URL + "?charset=utf8mb4"
 
 engine = create_engine(
     DATABASE_URL,

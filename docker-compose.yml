@@ -1,27 +1,27 @@
 #version: '3.8'
 
 services:
-  # MariaDB 데이터베이스
-  db:
-    image: mariadb:10.11
-    container_name: ktravel_db
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: ktravel
-      MYSQL_USER: ktravel_user
-      MYSQL_PASSWORD: ktravel_password
-    ports:
-      - "3307:3306"
-    volumes:
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - mariadb_data:/var/lib/mysql
-    networks:
-      - ktravel_network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  # # MariaDB 데이터베이스
+  # db:
+  #   image: mariadb:10.11
+  #   container_name: ktravel_db
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: rootpassword
+  #     MYSQL_DATABASE: ktravel
+  #     MYSQL_USER: ktravel_user
+  #     MYSQL_PASSWORD: ktravel_password
+  #   ports:
+  #     - "3307:3306"
+  #   volumes:
+  #     - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+  #     - mariadb_data:/var/lib/mysql
+  #   networks:
+  #     - ktravel_network
+  #   healthcheck:
+  #     test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
 
   # Redis (세션 저장소)
   redis:
@@ -42,11 +42,11 @@ services:
       dockerfile: Dockerfile
     container_name: ktravel_backend
     environment:
-      - DATABASE_HOST=db
-      - DATABASE_PORT=3306
-      - DATABASE_NAME=ktravel
-      - DATABASE_USER=ktravel_user
-      - DATABASE_PASSWORD=ktravel_password
+      - DATABASE_HOST=211.51.163.232
+      - DATABASE_PORT=19306
+      - DATABASE_NAME=lgup2
+      - DATABASE_USER=lgup2
+      - DATABASE_PASSWORD=lgup2P@ssw0rd
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=your-super-secret-key-change-in-production-min-32-chars
       - OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -56,8 +56,8 @@ services:
     volumes:
       - ./backend:/app
     depends_on:
-      db:
-        condition: service_healthy
+     # db:
+     # condition: service_healthy
       redis:
         condition: service_started
     networks:
@@ -94,3 +94,6 @@ networks:
 volumes:
   mariadb_data:
   redis_data:
+
+
+
