@@ -13,6 +13,8 @@ import Sidebar from './components/Sidebar.jsx';
 import KPathIntegrationPage from './pages/KPathIntegrationPage.jsx';
 import KPathIdeaPage from './pages/KPathIdeaPage.jsx';
 import ScheduleTable from './pages/ScheduleTable.jsx';
+import ConcertPage from './pages/ConcertPage';
+
 console.log('CLIENT_ID:', process.env.REACT_APP_NAVER_MAPS_CLIENT_ID);
 
 
@@ -52,7 +54,7 @@ function App() {
                         <Route path="/" element={<Concept_MainPage />} />
                         <Route path="/festival" element={<KpopFestival_MapLayout />} />
                         <Route path="/chatbot/demon-hunters" element={<KDH_ChatbotMapLayout />} />
-                        <Route path="/festivals" element={<FestivalPage />} />
+                        <Route path="/festivals" element={<ConcertPage />} />
                         <Route path="/k-pathidea" element={<KPathIntegrationPage />} />
 
                         <Route path="*" element={<Navigate to="/" replace />} />

@@ -35,6 +35,19 @@ from .festival_schema import (
     MapMarker
 )
 
+from .concert_schema import (
+    ConcertBase,
+    ConcertCreate,
+    ConcertUpdate,
+    ConcertResponse,
+    ConcertSummary,
+    ConcertsResponse,
+    OngoingConcertsResponse,
+    ConcertSearch,
+    ConcertDateRange
+)
+
+
 __all__ = [
     # User
     "UserBase", "UserCreate", "UserResponse", 
@@ -48,6 +61,12 @@ __all__ = [
     # Conversation
     "ConversationBase", "ConversationCreate", 
     "ConversationResponse", "ChatMessage", "ChatResponse",
+    
+      # Concert
+    "ConcertBase", "ConcertCreate", "ConcertUpdate", "ConcertResponse",
+    "ConcertSummary", "ConcertsResponse", "OngoingConcertsResponse",
+    "ConcertSearch", "ConcertDateRange",
+
     
     # Festival
     "FestivalBase", "FestivalResponse", "FestivalCard", "MapMarker"
