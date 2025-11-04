@@ -26,4 +26,4 @@ class Concert(Base):
     
     def __repr__(self):
     # repr 함수에도 위도/경도를 추가하여 디버깅 시 정보 확인이 용이하도록 업데이트했습니다.
-    return f"<Concert(id={self.concert_id}, title='{self.title}', lat={self.latitude}, lng={self.longitude})>"
+        return f"<Concert(id={self.concert_id}, title='{self.title}', lat={self.latitude}, lng={self.longitude})>"
