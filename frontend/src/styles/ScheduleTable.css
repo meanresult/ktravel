@@ -150,3 +150,70 @@
     font-size: 18px;
     color: #999;
 }
+
+/* Day Title 선택 */
+.kschedule-select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    width: 320px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    background-color: #fff;
+    color: #333;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.kschedule-select:hover {
+    border-color: #409eff;
+}
+
+/* Description textarea */
+.kschedule-textarea {
+    width: 100%;
+    max-width: 600px;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    box-sizing: border-box;
+    resize: vertical;
+    margin-bottom: 10px;
+    transition: border-color 0.2s;
+}
+
+.kschedule-textarea:focus {
+    outline: none;
+    border-color: #409eff;
+}
+
+/* 저장 버튼 (Day Description 저장) */
+.kschedule-btn-success {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background-color: #5cb85c;
+    color: white;
+    border: none;
+    transition: background-color 0.2s;
+}
+
+.kschedule-btn-success:hover {
+    background-color: #4cae4c;
+}
+
+/* Day Title + Description 그룹 박스 */
+.kschedule-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}

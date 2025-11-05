@@ -1,11 +1,15 @@
 """
 FastAPI 메인 애플리케이션
 """
-from app.api.endpoints import festival,map_search,odsay,concert
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.endpoints import auth, chat, destinations
+
+# ✅ 기존 엔드포인트 라우터
+from app.api.endpoints import auth, chat, destinations, festival, map_search, odsay, concert
+
+# ✅ 추가: Schedules 라우터
+from app.api.endpoints.schedule import router as schedules_router
 
 # FastAPI 앱 생성
 app = FastAPI(
@@ -23,16 +27,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# -------------------------------
 # 라우터 등록
+# -------------------------------
 app.include_router(auth.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(destinations.router, prefix="/api")
+app.include_router(schedules_router, prefix="/api/schedules")  # 일정 관리 API
+
 app.include_router(festival.router)
-app.include_router(map_search.router, prefix="/search") 
+app.include_router(map_search.router, prefix="/search")
 app.include_router(odsay.router)
 app.include_router(concert.router, prefix="/api")
 
+# -------------------------------
 # Health Check
+# -------------------------------
 @app.get("/")
 def root():
     return {
@@ -45,8 +55,9 @@ def root():
 def health_check():
     return {"status": "healthy"}
 
-
-
+# -------------------------------
+# Startup 이벤트
+# -------------------------------
 @app.on_event("startup")
 async def startup_event():
     try:
