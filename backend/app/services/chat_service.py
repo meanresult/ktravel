@@ -13,9 +13,9 @@ from app.utils.openai_client import chat_with_gpt
 class ChatService:
     
     # 🎯 Qdrant 설정
-    QDRANT_URL = "http://172.20.0.1:6333"  # 🎯 실제 호스트 IP
+    QDRANT_URL = os.getenv("QDRANT_URL", "http://qdrant:6333")
+    #QDRANT_URL = "http://172.17.0.1:6333"  # 🎯 실제 호스트 IP
     COLLECTION_NAME = "seoul-festival"
-    ATTRACTION_COLLECTION = "seoul-attraction"  # 관광명소 컬렉션 (추가)
     
     @staticmethod
     def send_message(db: Session, user_id: int, message: str) -> Dict[str, Any]:
@@ -62,27 +62,38 @@ class ChatService:
     @staticmethod
     def _analyze_message_with_gpt(message: str) -> Dict[str, Any]:
         """
-        GPT를 사용해 메시지 분석: 축제 검색 필요 여부 + 키워드 추출
+        🎯 개선: GPT를 사용해 메시지 분석 (더 적극적인 축제 검색)
         """
         try:
             analysis_messages = [
                 {
                     "role": "system",
-                    "content": """당신은 사용자의 메시지를 분석하여 축제 정보 검색이 필요한지 판단하는 전문가입니다.
+                    "content": """당신은 사용자의 메시지를 분석하여 축제/행사 정보 검색이 필요한지 판단하는 전문가입니다.
 
-사용자가 특정 축제나 행사에 대한 정보를 요청하는 경우에만 is_festival_query를 true로 설정하고, 검색할 키워드를 추출해주세요.
+**중요**: 다음과 같은 경우 is_festival_query를 true로 설정하세요:
+1. 축제, 행사, 이벤트, 공연, 전시 등의 단어가 명시된 경우
+2. 특정 장소(궁궐, 공원, 한강 등) + "에 대해", "정보", "알려줘" 같은 표현 
+   → 해당 장소의 행사/축제를 찾아야 함
+3. "야연", "페스티벌", "축전" 등 행사 관련 용어
+4. 날짜/계절 + 장소 조합 (예: "5월 창경궁", "가을 한강")
 
-응답은 반드시 JSON 형식으로 해주세요:
+**일반 대화 (false):**
+- 단순 인사 (안녕, 고마워)
+- 날씨, 시간 질문
+- 교통편, 길찾기
+
+응답 형식 (JSON):
 {
     "is_festival_query": true/false,
-    "keyword": "검색할 키워드" (축제 검색이 필요한 경우만)
+    "keyword": "검색 키워드"
 }
 
 예시:
-- "창경궁 야연에 대해 알려줘" → {"is_festival_query": true, "keyword": "창경궁 야연"}
-- "한강 빛축제 정보 줘" → {"is_festival_query": true, "keyword": "한강 빛축제"}  
-- "안녕하세요" → {"is_festival_query": false}
-- "오늘 날씨 어때?" → {"is_festival_query": false}"""
+- "창경궁 야연 알려줘" → {"is_festival_query": true, "keyword": "창경궁 야연"}
+- "창경궁에 대해 알려줘" → {"is_festival_query": true, "keyword": "창경궁"}
+- "궁중문화축전 정보" → {"is_festival_query": true, "keyword": "궁중문화축전"}
+- "한강 축제" → {"is_festival_query": true, "keyword": "한강"}
+- "안녕하세요" → {"is_festival_query": false}"""
                 },
                 {
                     "role": "user",
@@ -95,12 +106,14 @@ class ChatService:
             # JSON 파싱 시도
             try:
                 result = json.loads(gpt_response)
+                print(f"🤖 GPT 분석: {result}")  # 🎯 디버깅 로그 추가
                 return result
             except json.JSONDecodeError:
+                print(f"⚠️ JSON 파싱 실패: {gpt_response}")
                 return {"is_festival_query": False}
                 
         except Exception as e:
-            print(f"GPT 메시지 분석 오류: {e}")
+            print(f"❌ GPT 메시지 분석 오류: {e}")
             return {"is_festival_query": False}
     
     @staticmethod
@@ -110,11 +123,13 @@ class ChatService:
         Document 메타데이터를 그대로 활용하여 기존 RDB 형식 유지
         """
         try:
-            # 🎯 타임아웃 설정을 포함한 Qdrant 클라이언트 연결
+            print(f"🔍 검색 키워드: '{keyword}'")  # 🎯 디버깅 로그
+            
+            # 🎯 Qdrant 클라이언트 연결
             qdrant_client = QdrantClient(
                 url=ChatService.QDRANT_URL,
-                timeout=60,  # 🎯 타임아웃 60초로 증가
-                prefer_grpc=False  # 🎯 HTTP 사용 (더 안정적)
+                timeout=60,
+                prefer_grpc=False
             )
             
             # 임베딩 모델 준비
@@ -122,27 +137,33 @@ class ChatService:
             
             # 검색어 임베딩 생성
             query_embedding = embedding_model.embed_query(keyword)
+            print(f"✅ 임베딩 생성 완료 (차원: {len(query_embedding)})")  # 🎯 디버깅 로그
             
-            # 🎯 최적화된 벡터 검색
+            # 🎯 벡터 검색 (임계값 낮춤)
             search_results = qdrant_client.search(
                 collection_name=ChatService.COLLECTION_NAME,
                 query_vector=query_embedding,
-                limit=1,  # 🎯 1개만 가져오기
-                score_threshold=0.3,  # 🎯 임계값 낮춤 (더 많은 결과 허용)
-                with_payload=True,  # 🎯 명시적으로 payload 요청
-                with_vectors=False  # 🎯 벡터는 불필요하므로 제외 (속도 향상)
+                limit=3,  # 🎯 3개 가져와서 로그 확인
+                score_threshold=0.2,  # 🎯 0.3 → 0.2로 낮춤
+                with_payload=True,
+                with_vectors=False
             )
             
             if not search_results:
-                print(f"🔍 검색 결과 없음: '{keyword}'")
+                print(f"❌ 검색 결과 없음: '{keyword}'")
                 return None
+            
+            # 🎯 검색 결과 로그 출력
+            print(f"🎯 검색된 결과 {len(search_results)}개:")
+            for i, r in enumerate(search_results, 1):
+                title = r.payload.get("metadata", {}).get("title", "N/A")
+                print(f"  {i}. {title} (유사도: {r.score:.3f})")
             
             # 가장 유사한 결과 1개
             result = search_results[0]
             festival_data = result.payload.get("metadata", {})
             
             # 🎯 기존 RDB 응답과 동일한 형식으로 변환
-            # Document 생성 시 메타데이터가 그대로 보존됨
             formatted_data = {
                 "festival_id": festival_data.get("festival_id", festival_data.get("row")),
                 "title": festival_data.get("title"),
@@ -154,14 +175,16 @@ class ChatService:
                 "latitude": float(festival_data.get("latitude", 0)) if festival_data.get("latitude") else 0.0,
                 "longitude": float(festival_data.get("longitude", 0)) if festival_data.get("longitude") else 0.0,
                 "description": festival_data.get("description"),
-                "similarity_score": result.score  # 추가 정보
+                "similarity_score": result.score
             }
             
-            print(f"🎯 검색 성공: '{formatted_data['title']}' (유사도: {result.score:.3f})")
+            print(f"✅ 최종 선택: '{formatted_data['title']}' (유사도: {result.score:.3f})")
             return formatted_data
             
         except Exception as e:
-            print(f"벡터 검색 오류: {e}")
+            print(f"❌ 벡터 검색 오류: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     @staticmethod  
@@ -255,65 +278,6 @@ class ChatService:
             else:
                 return "안녕하세요! 축제나 행사에 대해 궁금한 것이 있으시면 언제든 물어보세요! 😊"
     
-    
-    @staticmethod
-    def _search_best_attraction(keyword: str) -> Dict[str, Any]:
-        """
-        🎯 관광명소 벡터 검색
-        """
-        try:
-            qdrant_client = QdrantClient(
-                url=ChatService.QDRANT_URL,
-                timeout=60,
-                prefer_grpc=False
-            )
-            
-            embedding_model = OpenAIEmbeddings(model="text-embedding-ada-002")
-            query_embedding = embedding_model.embed_query(keyword)
-            
-            search_results = qdrant_client.search(
-                collection_name=ChatService.ATTRACTION_COLLECTION,
-                query_vector=query_embedding,
-                limit=1,
-                score_threshold=0.3,
-                with_payload=True,
-                with_vectors=False
-            )
-            
-            if not search_results:
-                print(f"🔍 관광명소 검색 결과 없음: '{keyword}'")
-                return None
-            
-            result = search_results[0]
-            attraction_data = result.payload.get("metadata", {})
-            
-            formatted_data = {
-                "attr_id": attraction_data.get("attr_id"),
-                "title": attraction_data.get("title"),
-                "url": attraction_data.get("url"),
-                "description": attraction_data.get("description"),
-                "phone": attraction_data.get("phone"),
-                "hours_of_operation": attraction_data.get("hours_of_operation"),
-                "holidays": attraction_data.get("holidays"),
-                "address": attraction_data.get("address"),
-                "transportation": attraction_data.get("transportation"),
-                "image_urls": attraction_data.get("image_urls"),
-                "image_count": attraction_data.get("image_count", 0),
-                "latitude": float(attraction_data.get("latitude", 0)),
-                "longitude": float(attraction_data.get("longitude", 0)),
-                "attr_code": attraction_data.get("attr_code"),
-                "similarity_score": result.score
-            }
-            
-            print(f"🎯 관광명소 검색 성공: '{formatted_data['title']}' (유사도: {result.score:.3f})")
-            return formatted_data
-            
-        except Exception as e:
-            print(f"관광명소 검색 오류: {e}")
-            return None
-    
-    
-    
     @staticmethod
     def get_conversation_history(db: Session, user_id: int, limit: int = 50) -> List[Dict]:
         """
@@ -332,6 +296,3 @@ class ChatService:
             }
             for conv in reversed(conversations)
         ]
-    
-            # ... 나머지 코드 ...
-            
