@@ -18,10 +18,14 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS 설정
+# ⭐️ CORS 설정 - 직접 origins 지정 (임시 테스트용)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "*"  # 개발 중에만 사용 (모든 origin 허용)
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -66,3 +70,10 @@ async def startup_event():
         print("✅ Qdrant 연결 성공")
     except Exception as e:
         print(f"❌ Qdrant 연결 실패: {e}")
+    
+    # ⭐️ CORS 설정 확인 로그 추가
+    print("=" * 50)
+    print("🌐 CORS 설정 확인:")
+    print(f"   - localhost:3000 허용됨")
+    print(f"   - Credentials: True")
+    print("=" * 50)

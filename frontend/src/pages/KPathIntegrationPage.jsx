@@ -7,18 +7,92 @@ import '../styles/KPathIntegrationPage.css';
  * 지도와 일정 테이블을 통합하고 중앙 상태를 관리하는 메인 페이지 컴포넌트
  */
 function KPathIntegrationPage() {
-  // 일정 테이블에서 선택된 항목의 위치와 정보를 저장하는 상태
+  // ⭐ 선택된 day_title 상태 추가
+  const [selectedDayTitle, setSelectedDayTitle] = useState('');
+  
+  // ⭐ 해당 일정의 목적지들 (지도에 표시될 마커들)
+  const [scheduleLocations, setScheduleLocations] = useState([]);
+  
+  // ⭐ 로딩 상태
+  const [isLoadingDestinations, setIsLoadingDestinations] = useState(false);
+  
+  // 기존 상태 (지도 중심 이동용 - 옵션)
   const [selectedSchedule, setSelectedSchedule] = useState(null);
 
-  // 페이지 마운트 시 body에 클래스 추가 -> 배경색 적용
+  // 페이지 마운트 시 body에 클래스 추가
   useEffect(() => {
-    document.body.classList.add('kpath-page-body'); // CSS에서 배경색 정의 필요
+    document.body.classList.add('kpath-page-body');
     return () => {
       document.body.classList.remove('kpath-page-body');
     };
   }, []);
 
-  // 일정 테이블에서 항목 클릭 시 호출되는 콜백
+  // ⭐ day_title 변경 시 해당 일정의 목적지들 가져오기
+  useEffect(() => {
+    if (!selectedDayTitle) {
+      setScheduleLocations([]);
+      return;
+    }
+
+    const fetchDestinations = async () => {
+      setIsLoadingDestinations(true);
+      const token = localStorage.getItem('session_id');
+      
+      if (!token) {
+        console.warn('⚠️ 토큰이 없습니다.');
+        setIsLoadingDestinations(false);
+        return;
+      }
+
+      try {
+        console.log(`🔍 "${selectedDayTitle}" 일정의 목적지 조회 시작`);
+        
+        const response = await fetch(
+          `http://localhost:8000/api/destinations/by-schedule?day_title=${encodeURIComponent(selectedDayTitle)}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: 목적지 조회 실패`);
+        }
+
+        const destinations = await response.json();
+        console.log(`✅ 가져온 목적지 (${destinations.length}개):`, destinations);
+
+        // KPathIdeaPage의 마커 형식으로 변환
+        const markers = destinations.map(dest => ({
+          id: dest.destination_id,
+          lat: dest.latitude,
+          lng: dest.longitude,
+          name: dest.name,
+          notes: dest.notes || ''
+        }));
+
+        setScheduleLocations(markers);
+        
+      } catch (error) {
+        console.error('❌ 목적지 조회 실패:', error);
+        setScheduleLocations([]);
+      } finally {
+        setIsLoadingDestinations(false);
+      }
+    };
+
+    fetchDestinations();
+  }, [selectedDayTitle]);
+
+  // ⭐ ScheduleTable에서 day_title 변경 시 호출되는 핸들러
+  const handleDayTitleChange = (dayTitle) => {
+    console.log(`📅 일정 선택됨: ${dayTitle}`);
+    setSelectedDayTitle(dayTitle);
+  };
+
+  // 기존 일정 선택 핸들러 (필요시 유지)
   const handleScheduleSelect = (schedule) => {
     setSelectedSchedule({
       id: schedule.id,
@@ -43,17 +117,44 @@ function KPathIntegrationPage() {
           <p className="kpath-header-subtitle">Create Your Own Korea Travel Itinerary</p>
         </header>
 
-        {/* ScheduleTable 컴포넌트 */}
+        {/* ⭐ ScheduleTable에 onDayTitleChange 콜백 전달 */}
         <ScheduleTable 
+          onDayTitleChange={handleDayTitleChange}
           onSelectSchedule={handleScheduleSelect} 
           selectedId={selectedSchedule ? selectedSchedule.id : null}
         />
+        
+        {/* ⭐ 로딩 상태 표시 (옵션) */}
+        {isLoadingDestinations && (
+          <div style={{ 
+            padding: '1rem', 
+            textAlign: 'center', 
+            color: '#6366f1',
+            fontWeight: 'bold' 
+          }}>
+            📍 목적지 로딩 중...
+          </div>
+        )}
+        
+        {/* ⭐ 목적지 개수 표시 (옵션) */}
+        {!isLoadingDestinations && scheduleLocations.length > 0 && (
+          <div style={{ 
+            padding: '0.5rem 1rem', 
+            textAlign: 'center', 
+            color: '#10b981',
+            fontSize: '0.9rem' 
+          }}>
+            ✅ {scheduleLocations.length}개의 목적지가 지도에 표시되었습니다
+          </div>
+        )}
       </div>
 
       {/* 2. 오른쪽 지도/검색 패널 */}
       <div className="kpath-map-panel">
+        {/* ⭐ scheduleLocations를 KPathIdeaPage에 전달 */}
         <KPathIdeaPage 
           scheduleLocation={selectedSchedule}
+          scheduleLocations={scheduleLocations}
         />
       </div>
     </div>
