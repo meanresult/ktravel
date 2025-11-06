@@ -3,6 +3,7 @@ from typing import Dict, Any, List
 from sqlalchemy.orm import Session
 import json
 import os
+import random  # 🎯 NEW: 랜덤 기능 추가
 from langchain_openai import OpenAIEmbeddings
 from qdrant_client import QdrantClient
 
@@ -20,16 +21,46 @@ class ChatService:
     @staticmethod
     def send_message(db: Session, user_id: int, message: str) -> Dict[str, Any]:
         """
-        메시지 처리 및 응답 생성 - 축제 + 관광명소 통합 검색
+        메시지 처리 및 응답 생성 - 축제 + 관광명소 통합 검색 + 랜덤 추천
         """
         try:
-            # 1. 키워드 추출
+            # 1. 키워드 추출 및 랜덤 추천 여부 확인
             analysis = ChatService._analyze_message_simple(message)
             keyword = analysis.get('keyword', message)
+            is_random = analysis.get('is_random_recommendation', False)  # 🎯 NEW
             
-            # 2. 축제 + 관광명소 둘 다 검색
             results = []
             
+            # 🎯 NEW: 2-1. 랜덤 추천 요청인 경우
+            if is_random:
+                random_attractions = ChatService._get_random_attractions(count=10)
+                
+                # GPT 응답 생성 (타이틀 리스트만)
+                ai_response = ChatService._generate_random_response(random_attractions)
+                
+                # 대화 저장
+                conversation = Conversation(
+                    user_id=user_id,
+                    question=message,
+                    response=ai_response
+                )
+                db.add(conversation)
+                db.commit()
+                db.refresh(conversation)
+                
+                return {
+                    "response": ai_response,
+                    "convers_id": conversation.convers_id,
+                    "extracted_destinations": [],
+                    "results": random_attractions,
+                    "festivals": [],
+                    "attractions": random_attractions,
+                    "has_festivals": False,
+                    "has_attractions": len(random_attractions) > 0,
+                    "map_markers": []  # 랜덤 추천은 지도 마커 없음
+                }
+            
+            # 2-2. 기존: 축제 + 관광명소 검색
             festival = ChatService._search_best_festival(keyword)
             if festival:
                 festival['type'] = 'festival'
@@ -79,9 +110,23 @@ class ChatService:
     @staticmethod
     def _analyze_message_simple(message: str) -> Dict[str, Any]:
         """
-        GPT로 키워드만 추출 (타입 구분 안 함)
+        🎯 수정: 키워드 직접 감지 (GPT 의존도 낮춤)
         """
         try:
+            # 🎯 1단계: 간단한 키워드 감지 (GPT 없이)
+            message_lower = message.lower()
+            
+            # 랜덤 추천 키워드
+            random_keywords = ['가볼만한', '추천', '어디 갈', '관광지', '명소', '갈만한', '여행지']
+            
+            # 랜덤 추천 감지
+            if any(keyword in message_lower for keyword in random_keywords):
+                print(f"🎲 랜덤 추천 감지: '{message}'")
+                return {"is_random_recommendation": True, "keyword": ""}
+            
+            # 🎯 2단계: GPT로 키워드 추출 (일반 검색)
+            print(f"🔍 일반 검색 모드: '{message}'")
+            
             analysis_messages = [
                 {
                     "role": "system",
@@ -94,7 +139,6 @@ class ChatService:
 
 예시:
 - "Dosan park 알려줘" → {"keyword": "Dosan park"}
-- "63빌딩" → {"keyword": "63빌딩"}
 - "한강페스티벌 정보" → {"keyword": "한강페스티벌"}"""
                 },
                 {
@@ -107,13 +151,87 @@ class ChatService:
             
             try:
                 result = json.loads(gpt_response)
+                result['is_random_recommendation'] = False
+                print(f"🤖 키워드 추출 성공: {result}")
                 return result
             except json.JSONDecodeError:
-                return {"keyword": message}
+                print(f"⚠️ JSON 파싱 실패, 원본 사용")
+                return {"is_random_recommendation": False, "keyword": message}
                 
         except Exception as e:
-            print(f"키워드 추출 오류: {e}")
-            return {"keyword": message}
+            print(f"❌ 키워드 추출 오류: {e}")
+            import traceback
+            traceback.print_exc()
+            return {"is_random_recommendation": False, "keyword": message}
+    
+    @staticmethod
+    def _get_random_attractions(count: int = 10) -> List[Dict[str, Any]]:
+        """
+        🎯 NEW: 랜덤 관광명소 추천 (타이틀만)
+        """
+        try:
+            print(f"🎲 랜덤 관광명소 {count}개 추천 시작...")
+            
+            qdrant_client = QdrantClient(
+                url=ChatService.QDRANT_URL,
+                timeout=60,
+                prefer_grpc=False
+            )
+            
+            # 🎯 랜덤 오프셋으로 많이 가져오기 (전체 개수 모르므로)
+            random_offset = random.randint(0, 100)  # 간단하게 0~100 사이
+            
+            scroll_result = qdrant_client.scroll(
+                collection_name=ChatService.ATTRACTION_COLLECTION,
+                limit=count * 3,  # 여유있게 가져오기
+                offset=random_offset,
+                with_payload=True,
+                with_vectors=False
+            )
+            
+            points = scroll_result[0]  # (points, next_offset) 튜플
+            
+            if not points:
+                print(f"❌ 관광명소를 가져올 수 없습니다")
+                return []
+            
+            print(f"📊 가져온 관광명소: {len(points)}개")
+            
+            # 🎯 랜덤 섞기 후 count개만 선택
+            random.shuffle(points)
+            selected_points = points[:count]
+            
+            attractions = []
+            for point in selected_points:
+                attraction_data = point.payload.get("metadata", {})
+                
+                formatted_data = {
+                    "attr_id": attraction_data.get("attr_id"),
+                    "title": attraction_data.get("title"),
+                    "type": "attraction"
+                }
+                
+                attractions.append(formatted_data)
+                print(f"  ✅ {formatted_data['title']}")
+            
+            print(f"🎲 랜덤 추천 완료: {len(attractions)}개")
+            return attractions
+            
+        except Exception as e:
+            print(f"❌ 랜덤 추천 오류: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
+    
+    @staticmethod
+    def _generate_random_response(attractions: List[Dict]) -> str:
+        """
+        🎯 NEW: 랜덤 추천 응답 생성 (카드로 보여줄 것이므로 간단히)
+        """
+        if not attractions:
+            return "죄송합니다. 추천할 관광지를 찾을 수 없습니다. 😢"
+        
+        return f"🎯 서울의 추천 관광지 {len(attractions)}곳을 아래에 준비했습니다! 자세한 정보가 필요하시면 구체적인 장소명을 말씀해주세요! 😊"
     
     @staticmethod
     def _search_best_festival(keyword: str) -> Dict[str, Any]:
@@ -292,7 +410,7 @@ class ChatService:
 - 운영시간: {result.get('hours_of_operation')}
 - 설명: {result.get('description')}
 
-친절하게 최대한 모든 내용을 활용해서 답변하세요.."""
+친절하게 최대한 모든 내용을 활용해서 답변하세요."""
                 
                 response_messages = [
                     {
