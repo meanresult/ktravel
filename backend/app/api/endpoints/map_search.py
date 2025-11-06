@@ -103,7 +103,7 @@ async def search_location_endpoint(
     print(f"📍 Location search request: {query}")
     
     if not GOOGLE_API_KEY:
-        print("❌ GOOGLE_API_KEY not set")
+        print("❌ GOOGLE_API_KEY not set") 
         raise HTTPException(
             status_code=500,
             detail="GOOGLE_API_KEY가 설정되지 않았습니다. 환경변수를 확인해주세요."

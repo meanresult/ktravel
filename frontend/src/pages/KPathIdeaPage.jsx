@@ -14,7 +14,8 @@ const LOCATION_API_URL = "http://127.0.0.1:8000/search/location";
 const ROUTE_API_URL = "http://127.0.0.1:8000/api/search/route";
 const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_API_KEY;
 
-function KPathIdeaPage({ scheduleLocation }) {
+// ⭐ scheduleLocations prop 추가
+function KPathIdeaPage({ scheduleLocation, scheduleLocations = [] }) {
 
     // --- 1. 상태 관리 (useState) ---
     const [routePolyline, setRoutePolyline] = useState(null);
@@ -27,24 +28,20 @@ function KPathIdeaPage({ scheduleLocation }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState('🔍 장소 검색(자동완성 지원) 또는 입력 후 검색 버튼을 사용하세요.');
-    const [isDeleteMode, setIsDeleteMode] = useState(false); // 삭제 모드
+    const [isDeleteMode, setIsDeleteMode] = useState(false);
 
-    // 💡 추가된 상태: 마커 메모 및 모달 관리
     const [markerMemos, setMarkerMemos] = useState({}); 
     const [modalContent, setModalContent] = useState(null); 
 
-    // 💡 Hooks Top Level: useRef 정의
     const stateRef = useRef({});
-    const fetchRouteRef = useRef(null); // fetchRoute 참조
-    const deleteListenersRef = useRef({}); // { markerId: listenerObj } - 삭제 리스너 관리
+    const fetchRouteRef = useRef(null);
+    const deleteListenersRef = useRef({});
 
     // --- 2. 마커 메모 모달 제어 함수 정의 ---
     const openMemoModal = useCallback((markerData) => {
-        // 현재 저장된 메모 정보를 불러옴 (없으면 기본값)
         const currentMemo = markerMemos[markerData.id] || { 
             title: markerData.name, 
             memo: '',
-            // 검색어로 추가된 경우 name이 마커의 기본 타이틀이 됨
         }; 
         
         setModalContent({
@@ -52,25 +49,21 @@ function KPathIdeaPage({ scheduleLocation }) {
             initialTitle: currentMemo.title,
             initialMemo: currentMemo.memo,
             onSave: (newTitle, newMemo) => {
-                // 1. 메모 상태 업데이트
                 setMarkerMemos(prev => ({
                     ...prev,
                     [markerData.id]: { title: newTitle, memo: newMemo },
                 }));
                 
-                // 2. 마커 이름(name)을 업데이트하여 지도에 표시되는 라벨을 즉시 변경
-                // useMapLogic의 syncMarkers가 이 변경을 감지하고 마커를 다시 그림
                 setUserMarkers(prev => prev.map(m => 
                     m.id === markerData.id ? { ...m, name: newTitle } : m
                 ));
                 
-                setModalContent(null); // 모달 닫기
+                setModalContent(null);
                 setMessage(`📝 마커 '${newTitle}' 정보가 저장되었습니다.`);
             },
             onClose: () => setModalContent(null)
         });
     }, [markerMemos, setMarkerMemos, setUserMarkers]);
-
 
     // --- 3. 훅 호출 및 기능 가져오기 (useMapLogic 호출) ---
     const {
@@ -91,11 +84,48 @@ function KPathIdeaPage({ scheduleLocation }) {
         setSelectedEndId,
         stateRef,
         fetchRouteRef,
-        openMemoModal, // 💡 2. 정의된 함수를 훅에 전달
-        markerMemos   // 💡 마커 메모 상태도 훅에 전달 (마커 라벨 표시를 위해)
+        openMemoModal,
+        markerMemos
     );
 
-    // --- 4. 통합 Ref 업데이트 (useEffect) ---
+    // --- ⭐ 4. scheduleLocations 처리 (일정 선택 시 목적지 로드) ---
+    useEffect(() => {
+        if (!scheduleLocations || scheduleLocations.length === 0) {
+            // 목적지가 없으면 마커 초기화 (옵션)
+            // setUserMarkers([]);
+            // setMessage('📭 이 일정에는 아직 목적지가 없습니다.');
+            return;
+        }
+
+        console.log('📍 일정의 목적지들을 마커로 추가:', scheduleLocations);
+        
+        // ⭐ 기존 검색으로 추가한 마커는 유지하고 싶다면:
+        // setUserMarkers(prev => [...prev, ...scheduleLocations]);
+        
+        // ⭐ 일정의 목적지만 표시하고 싶다면 (권장):
+        setUserMarkers(scheduleLocations);
+        
+        setMessage(`📍 ${scheduleLocations.length}개의 목적지가 로드되었습니다.`);
+        
+        // 첫 번째 목적지로 지도 중심 이동
+        if (map && scheduleLocations[0]) {
+            try {
+                const firstLocation = scheduleLocations[0];
+                map.setCenter(
+                    new window.naver.maps.LatLng(
+                        firstLocation.lat, 
+                        firstLocation.lng
+                    )
+                );
+                map.setZoom(13, true);
+                console.log(`🗺️ 지도 중심 이동: ${firstLocation.name}`);
+            } catch (e) {
+                console.warn('지도 중심 이동 실패', e);
+            }
+        }
+    }, [scheduleLocations, map]);
+
+    // --- 5. 통합 Ref 업데이트 (useEffect) ---
     useEffect(() => {
         stateRef.current = {
             userMarkers,
@@ -107,12 +137,12 @@ function KPathIdeaPage({ scheduleLocation }) {
             isSelectingPath,
             isLoading,
             isDeleteMode,
-            markerMemos, // 💡 markerMemos도 ref에 포함
+            markerMemos,
         };
     }, [userMarkers, selectedStartId, selectedEndId, routeResult,
         routePolyline, isSummaryVisible, isSelectingPath, isLoading, isDeleteMode, markerMemos]);
 
-    // --- 5. 경로 검색 함수 정의 (생략된 로직은 원본 유지) ---
+    // --- 6. 경로 검색 함수 정의 ---
     const fetchRoute = useCallback(async (startLat, startLng, endLat, endLng) => {
         setIsLoading(true);
         setMessage('🚌 대중교통 경로 검색 중...');
@@ -135,7 +165,6 @@ function KPathIdeaPage({ scheduleLocation }) {
                 totalTime: data.totalTime ?? null, fare: data.fare ?? null, subPath: data.subPath ?? [],
             };
 
-            // 훅 함수 호출 (네이버 지도에 그려짐)
             drawSegmentedPolyline(data.segmentedPath ?? [], routeData);
 
         } catch (error) {
@@ -148,12 +177,12 @@ function KPathIdeaPage({ scheduleLocation }) {
         }
     }, [drawSegmentedPolyline, clearRoute]);
 
-    // --- 6. fetchRoute 참조 연결 (useMapLogic에서 호출될 함수 연결) ---
+    // --- 7. fetchRoute 참조 연결 ---
     useEffect(() => {
         fetchRouteRef.current = fetchRoute;
     }, [fetchRoute]);
 
-    // --- 7. 위치 검색 함수 (마커 추가 로직 - 원본 유지) ---
+    // --- 8. 위치 검색 함수 (마커 추가) ---
     const handleSearch = async (e) => {
         e?.preventDefault?.();
         if (!searchQuery.trim() || !map || isLoading) return;
@@ -187,15 +216,15 @@ function KPathIdeaPage({ scheduleLocation }) {
         } catch (error) {
             console.error('검색 중 오류 발생:', error);
             setMessage(`통신 오류: ${error.message}.`);
+
         } finally {
             setIsLoading(false);
         }
     };
 
-    // --- 8. 자동완성 로직 (원본 유지) ---
+    // --- 9. 자동완성 로직 ---
     useEffect(() => {
         const initAutocomplete = () => {
-             // ... (Google Autocomplete 초기화 로직 유지)
              try {
                 if (!window.google || !window.google.maps || !window.google.maps.places) {
                     console.warn('Google Places가 준비되지 않았습니다.');
@@ -265,7 +294,7 @@ function KPathIdeaPage({ scheduleLocation }) {
 
     }, [map]);
 
-    // --- 9. 삭제 모드 (원본 유지) ---
+    // --- 10. 삭제 모드 ---
     useEffect(() => {
         if (!map || !mapObjectsRef || !mapObjectsRef.current) return;
 
@@ -320,7 +349,7 @@ function KPathIdeaPage({ scheduleLocation }) {
         };
     }, [isDeleteMode, map, mapObjectsRef, handleDeleteMarker]);
 
-    // --- 10. 경로 생성 시작 핸들러 (원본 유지) ---
+    // --- 11. 경로 생성 시작 핸들러 ---
     const handleGenerateRoute = async () => {
         clearRoute();
 
@@ -335,13 +364,12 @@ function KPathIdeaPage({ scheduleLocation }) {
         setMessage('✨ 경로 생성 모드 시작! 1️⃣ 출발지 마커를 클릭하세요.');
     };
 
-    // --- 11. UI 렌더링 (JSX) ---
+    // --- 12. UI 렌더링 (JSX) ---
     return (
         <div className="kpath-container-map-only">
             
             {/* 검색 UI */}
             <form onSubmit={handleSearch} className="kpath-search-form" style={{ alignItems: 'center' }}>
-                {/* ... 검색 입력 및 버튼 JSX 유지 ... */}
                 <input
                     id="autocomplete-input"
                     type="text"
@@ -423,16 +451,11 @@ function KPathIdeaPage({ scheduleLocation }) {
                 </div>
             )}
 
-            {/* 💡 마커 메모 모달 렌더링 */}
+            {/* 마커 메모 모달 렌더링 */}
             {modalContent && <MemoModal {...modalContent} />}
 
         </div>
     );
 }
-
-// ⚠️ 참고: MemoModal 컴포넌트는 별도로 정의되어 있어야 합니다.
-// (타이틀/메모 입력창과 저장/취소 버튼이 있는 컴포넌트)
-// 이 파일은 src/pages/KPathIdeaPage.jsx이며, MemoModal은 src/components/kpathidea/MemoModal.jsx에 있을 것으로 가정합니다.
-
 
 export default KPathIdeaPage;

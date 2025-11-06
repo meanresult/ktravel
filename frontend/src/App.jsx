@@ -8,7 +8,6 @@ import KpopFestival_MapLayout from './pages/KpopFestival_MapLayout.jsx';
 import KDH_ChatbotMapLayout from './pages/KDH_ChatbotMapLayout.jsx';
 import Kpop_ChatbotMapLayout from './pages/Kpop_ChatbotMapLayout.jsx';
 import KFood_ChatbotMapLayout from './pages/KFood_ChatbotMapLayout.jsx';
-import FestivalPage from './pages/FestivalPage.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import KPathIntegrationPage from './pages/KPathIntegrationPage.jsx';
 import KPathIdeaPage from './pages/KPathIdeaPage.jsx';
@@ -52,11 +51,12 @@ function App() {
                         <Route path="/chatbot/kpop-star" element={<Kpop_ChatbotMapLayout />} />
                         <Route path="/chatbot/k-food" element={<KFood_ChatbotMapLayout />} />
                         <Route path="/" element={<Concept_MainPage />} />
-                        <Route path="/festival" element={<KpopFestival_MapLayout />} />
                         <Route path="/chatbot/demon-hunters" element={<KDH_ChatbotMapLayout />} />
                         <Route path="/festivals" element={<ConcertPage />} />
                         <Route path="/k-pathidea" element={<KPathIntegrationPage />} />
-
+                        <Route path="/my-dashboard" element={<KPathIntegrationPage />} />
+                        <Route path="/k-spotlight" element={<KPathIntegrationPage />} />
+                       
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                 </main>

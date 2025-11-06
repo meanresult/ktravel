@@ -20,9 +20,10 @@ class Concert(Base):
     link = Column(String(255), nullable=True) # link: VARCHAR(255), NULL 허용
     
     # latitude, longitude는 DOUBLE이므로 Float 타입 사용
-    latitude = Column(Float, nullable=True) # latitude: DOUBLE, NULL 허용
+    latitude = Column(Float, nullable=True) # latitude: DOUBLE, NULL 허용sa
     longitude = Column(Float, nullable=True) # longitude: DOUBLE, NULL 허용
     
     
     def __repr__(self):
-        return f"<Concert(concert_id={self.concert_id}, title='{self.title}', start_date='{self.start_date}')>"
+    # repr 함수에도 위도/경도를 추가하여 디버깅 시 정보 확인이 용이하도록 업데이트했습니다.
+        return f"<Concert(id={self.concert_id}, title='{self.title}', lat={self.latitude}, lng={self.longitude})>"

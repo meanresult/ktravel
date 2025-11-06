@@ -1,11 +1,15 @@
 """
 FastAPI 메인 애플리케이션
 """
-from app.api.endpoints import festival,map_search,odsay,concert
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.endpoints import auth, chat, destinations
+
+# ✅ 기존 엔드포인트 라우터
+from app.api.endpoints import auth, chat, destinations, festival, map_search, odsay, concert
+
+# ✅ 추가: Schedules 라우터
+from app.api.endpoints.schedule import router as schedules_router
 
 # FastAPI 앱 생성
 app = FastAPI(
@@ -14,25 +18,35 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS 설정
+# ⭐️ CORS 설정 - 직접 origins 지정 (임시 테스트용)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "*"  # 개발 중에만 사용 (모든 origin 허용)
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# -------------------------------
 # 라우터 등록
+# -------------------------------
 app.include_router(auth.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(destinations.router, prefix="/api")
+app.include_router(schedules_router, prefix="/api/schedules")  # 일정 관리 API
+
 app.include_router(festival.router)
-app.include_router(map_search.router, prefix="/search") 
+app.include_router(map_search.router, prefix="/search")
 app.include_router(odsay.router)
 app.include_router(concert.router, prefix="/api")
 
+# -------------------------------
 # Health Check
+# -------------------------------
 @app.get("/")
 def root():
     return {
@@ -45,8 +59,9 @@ def root():
 def health_check():
     return {"status": "healthy"}
 
-
-
+# -------------------------------
+# Startup 이벤트
+# -------------------------------
 @app.on_event("startup")
 async def startup_event():
     try:
@@ -55,3 +70,10 @@ async def startup_event():
         print("✅ Qdrant 연결 성공")
     except Exception as e:
         print(f"❌ Qdrant 연결 실패: {e}")
+    
+    # ⭐️ CORS 설정 확인 로그 추가
+    print("=" * 50)
+    print("🌐 CORS 설정 확인:")
+    print(f"   - localhost:3000 허용됨")
+    print(f"   - Credentials: True")
+    print("=" * 50)

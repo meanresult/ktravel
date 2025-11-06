@@ -1,7 +1,7 @@
 """
 콘서트 API 엔드포인트 (ORM 버전)
 """
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_
 from typing import List, Optional
@@ -14,6 +14,13 @@ from app.schemas import (
     ConcertSummary, # 사용하지 않지만 일단 유지합니다.
     ConcertsResponse # 사용하지 않지만 일단 유지합니다.
 )
+
+# 위치 기반 검색을 위한 수학 함수 (하버사인 공식의 일부)를 위한 import
+from sqlalchemy.sql import func
+import math
+
+# 지구 반경 (킬로미터)
+EARTH_RADIUS_KM = 6371
 
 router = APIRouter(
     prefix="/concerts", # URL 접두사를 /api/concerts로 변경
@@ -157,3 +164,67 @@ async def get_concerts_by_date_range( # 함수명 변경
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"날짜별 콘서트 조회 오류: {str(e)}")
+
+
+@router.get("/search/location", response_model=List[ConcertResponse])
+async def search_concerts_by_location(
+    # 중심 위도: 필수 입력값
+    lat: float = Query(..., description="검색 중심 위도"),
+    # 중심 경도: 필수 입력값
+    lon: float = Query(..., description="검색 중심 경도"),
+    # 검색 반경(km): 기본값 10km
+    radius_km: float = Query(10, description="검색 반경 (킬로미터)"),
+    db: Session = Depends(get_db)
+):
+    """
+    주어진 중심 좌표(위도, 경도)와 반경(km) 내에 위치하는 콘서트 목록을 조회합니다.
+    (하버사인 공식을 사용하여 거리를 계산합니다. DB 함수가 아닌 Python math를 사용하므로 대량 데이터에는 비효율적일 수 있습니다.)
+    """
+    try:
+        if radius_km <= 0:
+            raise HTTPException(status_code=400, detail="반경은 0보다 커야 합니다.")
+
+        # 1. 모든 콘서트 데이터와 위도/경도를 가져옵니다.
+        # 실제 운영 환경에서는 DB의 공간 확장 기능을 사용하는 것이 성능상 유리합니다.
+        all_concerts = db.query(Concert).all()
+
+        # 2. 중심 좌표와 콘서트 위치 간의 거리를 계산하고 필터링합니다.
+        nearby_concerts = []
+        
+        # 중심 좌표를 라디안으로 변환
+        center_lat_rad = math.radians(lat)
+        center_lon_rad = math.radians(lon)
+
+        for concert in all_concerts:
+            # latitude 또는 longitude가 없는 데이터는 건너뜁니다.
+            if concert.latitude is None or concert.longitude is None:
+                continue
+
+            # 콘서트 위치를 라디안으로 변환
+            concert_lat_rad = math.radians(concert.latitude)
+            concert_lon_rad = math.radians(concert.longitude)
+            
+            # 위도 및 경도 차이 계산
+            dlat = concert_lat_rad - center_lat_rad
+            dlon = concert_lon_rad - center_lon_rad
+            
+            # 하버사인 공식 (Haversine Formula)을 적용하여 거리를 계산합니다.
+            a = math.sin(dlat / 2)**2 + math.cos(center_lat_rad) * math.cos(concert_lat_rad) * math.sin(dlon / 2)**2
+            c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+            
+            # 킬로미터 단위의 최종 거리
+            distance_km = EARTH_RADIUS_KM * c
+
+            # 검색 반경 내에 있는 경우 목록에 추가
+            if distance_km <= radius_km:
+                nearby_concerts.append(concert)
+                
+        # 시작 날짜 순으로 정렬하여 반환
+        nearby_concerts.sort(key=lambda x: x.start_date, reverse=False)
+
+        return nearby_concerts
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"위치 기반 검색 오류: {str(e)}")

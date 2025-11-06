@@ -47,7 +47,7 @@ from .concert_schema import (
     ConcertDateRange
 )
 
-
+from .schedule_schema import ScheduleEdit, ScheduleResponse
 __all__ = [
     # User
     "UserBase", "UserCreate", "UserResponse", 
@@ -70,6 +70,9 @@ __all__ = [
     
     # Festival
     "FestivalBase", "FestivalResponse", "FestivalCard", "MapMarker"
+    
+     # Schedule
+    "ScheduleEdit", "ScheduleResponse"
 ]
 
 ################################################
