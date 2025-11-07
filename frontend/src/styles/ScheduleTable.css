@@ -271,8 +271,8 @@
     display: flex;
     flex-wrap: wrap; /* 버튼이 많아지면 줄바꿈 처리 */
     gap: 10px;
-    margin-top: 15px;
-    margin-bottom: 15px;
+    margin-top: 10px;
+    margin-bottom: 10px;
     padding: 10px;
     border-radius: 5px;
 }
@@ -283,9 +283,9 @@
 .kschedule-btn-secondary,
 .kschedule-btn-secondary-danger,
 .kschedule-btn-info {
-    padding: 10px 15px;
+    padding: 10px 23px;
     border: none;
-    border-radius: 5px;
+    border-radius: 2px;
     cursor: pointer;
     color: white;
     transition: background-color 0.2s;
@@ -350,9 +350,9 @@
 /* 셀 입력 필드 스타일 */
 .kschedule-cell-input {
     width: 100%;
-    padding: 8px;
+    padding: 11px;
     border: 1px solid #e0e0e0;
-    border-radius: 4px;
+    border-radius: 3px;
     font-size: 14px;
     box-sizing: border-box;
     background-color: #ffffff;
@@ -373,4 +373,16 @@
 /* 셀 자체의 패딩 조정 */
 .kschedule-schedule-cell {
     padding: 4px;
+}
+
+
+/* ScheduleTable.css에 추가 */
+.kschedule-table tr {
+    /* 드래그 중 레이아웃 유지에 도움 */
+    display: table-row !important; 
+}
+
+/* 드래그 중인 열 헤더 (th)가 table-cell 속성을 유지하도록 보장 */
+.kschedule-table thead th {
+    display: table-cell !important;
 }
