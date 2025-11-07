@@ -10,11 +10,8 @@ import Kpop_ChatbotMapLayout from './pages/Kpop_ChatbotMapLayout.jsx';
 import KFood_ChatbotMapLayout from './pages/KFood_ChatbotMapLayout.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import KPathIntegrationPage from './pages/KPathIntegrationPage.jsx';
-import KPathIdeaPage from './pages/KPathIdeaPage.jsx';
-import ScheduleTable from './pages/ScheduleTable.jsx';
 import ConcertPage from './pages/ConcertPage';
-
-console.log('CLIENT_ID:', process.env.REACT_APP_NAVER_MAPS_CLIENT_ID);
+import KMediaPage from './pages/KMediaPage.jsx';
 
 
 function App() {
@@ -55,7 +52,7 @@ function App() {
                         <Route path="/festivals" element={<ConcertPage />} />
                         <Route path="/k-pathidea" element={<KPathIntegrationPage />} />
                         <Route path="/my-dashboard" element={<KPathIntegrationPage />} />
-                        <Route path="/k-spotlight" element={<KPathIntegrationPage />} />
+                        <Route path="/k-spotlight" element={<KMediaPage />} />
                        
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>

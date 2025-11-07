@@ -144,7 +144,7 @@ function KPathIntegrationPage() {
             color: '#10b981',
             fontSize: '0.9rem' 
           }}>
-            ✅ {scheduleLocations.length}개의 목적지가 지도에 표시되었습니다
+            ✅ {scheduleLocations.length} destinations were shown on the map 
           </div>
         )}
       </div>

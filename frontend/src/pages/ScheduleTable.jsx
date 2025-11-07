@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Trash2 } from 'lucide-react'; // 🗑️ 삭제 아이콘 추가
 import '../styles/ScheduleTable.css';
 
 // ⭐ onDayTitleChange prop 추가
@@ -9,7 +10,19 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
     const [selectedDayTitle, setSelectedDayTitle] = useState('');
     const [description, setDescription] = useState('');
     const [authError, setAuthError] = useState(null);
+    
+    // ⭐ 편집 상태 관리
+    const [isDeleteMode, setIsDeleteMode] = useState(false); // 행 삭제 모드 상태
 
+    // 💡 일정 테이블 항목/시간 상태로 관리
+    const initialDays = ['Location', 'Estimated Cost', 'Place of use', 'Memo', 'Notice'];
+    const initialTimes = ['9:00', '10:00', '11:00'];
+    const [scheduleTimes, setScheduleTimes] = useState(initialTimes);
+    const [scheduleDays, setScheduleDays] = useState(initialDays);
+    
+    // ⭐ 셀 데이터 상태 관리 (time x day)
+    const [cellData, setCellData] = useState({});
+    
     const fetchWithAuth = async (url, options = {}) => {
         setAuthError(null);
 
@@ -80,7 +93,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
                     onDayTitleChange(data[0].day_title);
                 }
             } else {
-                console.warn("⚠️ day_titles가 비어있습니다");
+                console.warn("⚠️ No day Title");
             }
           })
           .catch(err => {
@@ -163,9 +176,161 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
             onDayTitleChange(newDayTitle);
         }
     };
+    
+    // ----------------------------------------------------
+    // ⭐ 셀 데이터 관리 함수
+    // ----------------------------------------------------
+    
+    // 셀 값 가져오기
+    const getCellValue = (time, day) => {
+        const key = `${time}-${day}`;
+        return cellData[key] || '';
+    };
+    
+    // 셀 값 변경하기
+    const handleCellChange = (time, day, value) => {
+        const key = `${time}-${day}`;
+        setCellData(prev => ({
+            ...prev,
+            [key]: value
+        }));
+    };
+    
+    // ----------------------------------------------------
+    // ⭐ 행(시간) 관리 함수 개선
+    // ----------------------------------------------------
+    
+    // 5️⃣ 행 추가 (자동 시간 계산)
+    const handleAddRow = () => {
+        const sortedTimes = [...scheduleTimes].sort((a, b) => {
+            return new Date(`2000/01/01 ${a}`) - new Date(`2000/01/01 ${b}`);
+        });
+        
+        let newTime;
+        if (sortedTimes.length > 0) {
+            const lastTimeStr = sortedTimes[sortedTimes.length - 1];
+            const [hourStr, minuteStr] = lastTimeStr.split(':');
+            let hour = parseInt(hourStr);
+            let minute = parseInt(minuteStr);
+            
+            // 1시간 추가 로직
+            hour = (hour + 1) % 24; 
+            
+            newTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        } else {
+            newTime = '09:00'; 
+        }
 
-    const days = ['Location', 'Estimated Cost', 'Place of use', 'Memo', 'Notice'];
-    const times = ['9:00', '10:00', '11:00'];
+        if (scheduleTimes.includes(newTime)) {
+             // 시간이 이미 존재하면 다음 분으로 이동 (간단한 충돌 회피)
+             const [hourStr, minuteStr] = newTime.split(':');
+             const minute = parseInt(minuteStr) + 1;
+             newTime = `${hourStr}:${String(minute).padStart(2, '0')}`;
+        }
+
+
+        const updatedTimes = [...scheduleTimes, newTime].sort((a, b) => {
+            return new Date(`2000/01/01 ${a}`) - new Date(`2000/01/01 ${b}`);
+        });
+        setScheduleTimes(updatedTimes);
+        alert(`✅ ${newTime} row has been added.`);
+    };
+    
+    // 6️⃣ 행 삭제 모드 전환
+    const handleDeleteRowMode = () => {
+        setIsDeleteMode(!isDeleteMode);
+        if (!isDeleteMode) {
+            alert("🗑️ The row delete mode is on. Click the time cell you want to delete.");
+        } else {
+            alert("✅ The row delete mode has been turned off.");
+        }
+    };
+    
+    // 7️⃣ 특정 행 삭제 (시간 셀 클릭 시)
+    const handleRemoveTimeSlot = (timeToRemove) => {
+        if (!isDeleteMode) return;
+
+        if (window.confirm(`Are you sure you want to delete the ${timeToRemove} line?`)) {
+            setScheduleTimes(scheduleTimes.filter(time => time !== timeToRemove));
+            alert(`✅ ${timeToRemove} row has been deleted.`);
+        }
+    };
+    
+    // ----------------------------------------------------
+    // ⭐ 열(항목) 관리 함수
+    // ----------------------------------------------------
+    
+    // 8️⃣ 열 추가
+    const handleAddColumn = () => {
+        const newColumn = prompt("Enter the name of the item (column name) to be added:");
+        if (newColumn && !scheduleDays.includes(newColumn)) {
+            setScheduleDays([...scheduleDays, newColumn]);
+            alert(`✅ '${newColumn}' Column added.`);
+        } else if (newColumn) {
+            alert("⚠️ Item name that already exists.");
+        }
+    };
+    
+    // 9️⃣ 열 삭제
+    const handleDeleteColumn = () => {
+        const columnToRemove = prompt(`Enter the name of the item to delete (${scheduleDays.join(', ')}):`);
+        if (columnToRemove && scheduleDays.includes(columnToRemove)) {
+            if (window.confirm(`Are you sure you want to delete column '${columnToRemove}'?`)) {
+                setScheduleDays(scheduleDays.filter(day => day !== columnToRemove));
+                alert(`✅ '${columnToRemove}' Column deleted.`);
+            }
+        } else if (columnToRemove) {
+             alert("⚠️ 해당 항목 이름이 목록에 없습니다.");
+        }
+    };
+    
+    // ----------------------------------------------------
+    // ⭐ CSV 다운로드 함수
+    // ----------------------------------------------------
+    
+      const handleDownloadCSV = () => {
+          const header = ["Time", ...scheduleDays].join(",");
+          
+          const rows = scheduleTimes.map(time => {
+              const safeTime = `${time}`; // 시간 텍스트로 강제
+          
+              const rowData = scheduleDays.map(day => {
+                  let value = getCellValue(time, day) || "";
+                  
+                  // 쉼표, 따옴표 포함 시 이스케이프
+                  if (value.includes(',') || value.includes('"')) {
+                      value = `"${value.replace(/"/g, '""')}"`;
+                  }
+
+                  // 엑셀이 날짜/숫자처럼 오해하지 않도록
+                  if (!value.startsWith('"')) {
+                      value = `"${value}"`;
+                  }
+
+                  return value;
+              });
+
+              return [safeTime, ...rowData].join(",");
+          });
+
+          const csvContent = [header, ...rows].join("\n");
+
+          // ✅ UTF-8 with BOM 추가 → 한글 깨짐 해결!
+          const BOM = "\uFEFF";
+          const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.setAttribute('href', url);
+          link.setAttribute('download', `${selectedDayTitle || 'Schedule'}_Details.csv`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          alert(`📥 '${selectedDayTitle || 'Schedule'}_Details.csv' 다운로드가 시작되었습니다.`);
+      };
+
+
 
     return (
         <div className="kschedule-container">
@@ -184,15 +349,16 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
 
             {!authError && (
                 <>
+                    {/* 상단: Day Title, Description, Save */}
                     <div className="kschedule-details">
                         <label>Day Title</label>
                         <select
                           className="kschedule-select"
                           value={selectedDayTitle}
-                          onChange={handleDayTitleChange} // ⭐ 변경됨
+                          onChange={handleDayTitleChange}
                         >
                             {dayTitles.length === 0 && (
-                                <option value="">일정이 없습니다</option>
+                                <option value="">No Schedule!</option>
                             )}
                             {dayTitles.map((day, idx) => (
                                 <option key={idx} value={day}>{day}</option>
@@ -201,30 +367,95 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
 
                         <label>Description</label>
                         <textarea
-                          rows={4}
+                          rows={1}
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
                         />
 
-                        <button className="kschedule-btn kschedule-btn-success" onClick={handleSave}>
+                        <button className="kschedule-btn-success" onClick={handleSave}>
                             ✅ Save
                         </button>
                     </div>
+                    
+                    {/* ⭐ 툴바: 행 관리, 열 관리 및 CSV 버튼 */}
+                    <div className="kschedule-toolbar">
+                        {/* 행 추가 버튼 */}
+                        <button 
+                            onClick={handleAddRow} 
+                            className="kschedule-btn-primary"
+                        >
+                            ➕ Add Row
+                        </button>
+                        
+                        {/* 행 삭제 모드 버튼 */}
+                        <button 
+                            onClick={handleDeleteRowMode} 
+                            style={{ 
+                                background: isDeleteMode ? '#ef4444' : '#cc0000', 
+                                color: 'white'
+                            }}
+                            className="kschedule-btn-danger"
+                        >
+                            <Trash2 size={16} style={{ marginRight: isDeleteMode ? '0' : '0.5rem' }} /> 
+                            {isDeleteMode ? 'Delete Row Mode (ON)' : 'Delete Row Mode (OFF)'}
+                        </button>
+                        
+                        {/* 열 추가 버튼 */}
+                        <button 
+                            onClick={handleAddColumn} 
+                            className="kschedule-btn-secondary"
+                        >
+                            ➕ Add Columns 
+                        </button>
+                        
+                        {/* 열 삭제 버튼 */}
+                        <button 
+                            onClick={handleDeleteColumn} 
+                            className="kschedule-btn-secondary-danger"
+                        >
+                            ➖ Delete Columns
+                        </button>
 
+                        {/* CSV 다운로드 버튼 */}
+                        <button 
+                            onClick={handleDownloadCSV} 
+                            className="kschedule-btn-info"
+                        >
+                            📥 CSV Download
+                        </button>
+                    </div>
+
+                    {/* 테이블 */}
                     <div className="kschedule-table-wrapper">
                         <table className="kschedule-table">
                             <thead>
                                 <tr>
-                                    <th>Time</th>
-                                    {days.map((day, idx) => <th key={idx}>{day}</th>)}
+                                    <th className={isDeleteMode ? 'kschedule-delete-mode' : ''}>Time</th>
+                                    {scheduleDays.map((day, idx) => <th key={idx}>{day}</th>)}
                                 </tr>
                             </thead>
                             <tbody>
-                                {times.map((time, ti) => (
+                                {scheduleTimes.map((time, ti) => (
                                     <tr key={ti}>
-                                        <td className="kschedule-time-cell">{time}</td>
-                                        {days.map((_, di) => (
-                                            <td key={di} className="kschedule-schedule-cell"></td>
+                                        <td 
+                                            className={`kschedule-time-cell ${isDeleteMode ? 'kschedule-time-cell-deletable' : ''}`}
+                                            onClick={() => handleRemoveTimeSlot(time)}
+                                        >
+                                            {time}
+                                        </td>
+                                        {scheduleDays.map((day, di) => (
+                                            <td 
+                                                key={di} 
+                                                className="kschedule-schedule-cell"
+                                            >
+                                                <input
+                                                    type="text"
+                                                    value={getCellValue(time, day)}
+                                                    onChange={(e) => handleCellChange(time, day, e.target.value)}
+                                                    className="kschedule-cell-input"
+                                                    placeholder=" "
+                                                />
+                                            </td>
                                         ))}
                                     </tr>
                                 ))}
@@ -233,10 +464,6 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
                     </div>
                 </>
             )}
-
-            <div className="kschedule-table-dots">
-                <span>...</span>
-            </div>
         </div>
     );
 };

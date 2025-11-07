@@ -1,0 +1,47 @@
+/* 카드 디자인 */
+.kmedia-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    padding: 15px;
+    position: relative;
+    transition: 0.2s ease-in-out;
+}
+
+.kmedia-card:hover {
+    transform: translateY(-5px);
+}
+
+/* 이미지 */
+.kmedia-image {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+/* 제목 & 장소 */
+.kmedia-title {
+    font-size: 1.1rem;
+    margin: 10px 0 5px;
+    font-weight: 600;
+    color: #555;
+}
+
+.kmedia-location {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+/* 좋아요 버튼 */
+.kmedia-like-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 1.8rem;
+    transition: 0.2s;
+}
+
+.kmedia-like-btn.liked {
+    transform: scale(1.1);
+}

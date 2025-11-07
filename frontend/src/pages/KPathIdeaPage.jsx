@@ -105,7 +105,7 @@ function KPathIdeaPage({ scheduleLocation, scheduleLocations = [] }) {
         // ⭐ 일정의 목적지만 표시하고 싶다면 (권장):
         setUserMarkers(scheduleLocations);
         
-        setMessage(`📍 ${scheduleLocations.length}개의 목적지가 로드되었습니다.`);
+        setMessage(`📍 ${scheduleLocations.length} destinations loaded.`);
         
         // 첫 번째 목적지로 지도 중심 이동
         if (map && scheduleLocations[0]) {
@@ -361,7 +361,7 @@ function KPathIdeaPage({ scheduleLocation, scheduleLocations = [] }) {
         setSelectedStartId(null);
         setSelectedEndId(null);
         setIsSelectingPath(true);
-        setMessage('✨ 경로 생성 모드 시작! 1️⃣ 출발지 마커를 클릭하세요.');
+        setMessage('✨ Start path creation mode! 1️⃣ Click the origin marker.');
     };
 
     // --- 12. UI 렌더링 (JSX) ---
@@ -375,14 +375,14 @@ function KPathIdeaPage({ scheduleLocation, scheduleLocations = [] }) {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="장소나 주소를 검색하여 지도에 마커로 추가하세요."
+                    placeholder="Search for a place or address and add it to the map as a marker."
                     className="kpath-search-input"
                     disabled={isLoading}
                     autoComplete="off"
                 />
                 <button type="submit" className="kpath-search-button" disabled={isLoading || !isApiLoaded} >
                     {isLoading ? (<Loader className="w-5 h-5" style={{ animation: 'spin 1s linear infinite', marginRight: '0.5rem' }} />) : (<Search className="w-5 h-5" style={{ marginRight: '0.5rem' }} />)}
-                    장소 검색 및 마커 추가
+                    Search for places and add markers
                 </button>
 
                 {/* 삭제 모드 토글 버튼 */}
@@ -391,36 +391,39 @@ function KPathIdeaPage({ scheduleLocation, scheduleLocations = [] }) {
                     onClick={() => setIsDeleteMode(prev => !prev)}
                     className="kpath-delete-toggle"
                     style={{
-                        marginLeft: '0.5rem',
                         background: isDeleteMode ? '#ef4444' : '#6b7280',
                         color: 'white',
-                        padding: '0.5rem 0.75rem',
-                        borderRadius: 8,
+                        padding: '0.5rem 0.7rem',
+                        borderRadius: 7,
                         border: 'none',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',   
+                        justifyContent: 'center',           
+                        gap: '0.5rem'
                     }}
                 >
-                    <Trash2 className="w-5 h-5" style={{ marginRight: '0.5rem' }} />
-                    {isDeleteMode ? '삭제 모드 (ON)' : '삭제 모드 (OFF)'}
+                    <Trash2 className="w-5 h-5" />
+                    {isDeleteMode ? 'Delete Mode (ON)' : 'Delete Mode (OFF)'}
                 </button>
             </form>
 
             {/* 경로 컨트롤 박스 */}
             <div className="kpath-route-control-box">
                 <div className="kpath-control-item">
-                    <span className="kpath-bold-text" style={{ color: selectedStartId ? '#16a34a' : '#9ca3af' }}>출발지:</span>
-                    <span style={{ marginLeft: '0.5rem' }}>{selectedStartId ? userMarkers.find(m => m.id === selectedStartId)?.name : '미지정'}</span>
+                    <span className="kpath-bold-text" style={{ color: selectedStartId ? '#16a34a' : '#30415eff' }}>Departure:</span>
+                    <span style={{ marginLeft: '0.5rem',color: '#888888'}}>{selectedStartId ? userMarkers.find(m => m.id === selectedStartId)?.name : 'Unspecified'}</span>
                 </div>
                 <div className="kpath-control-item">
-                    <span className="kpath-bold-text" style={{ color: selectedEndId ? '#dc2626' : '#9ca3af' }}>도착지:</span>
-                    <span style={{ marginLeft: '0.5rem' }}>{selectedEndId ? userMarkers.find(m => m.id === selectedEndId)?.name : '미지정'}</span>
+                    <span className="kpath-bold-text" style={{ color: selectedEndId ? '#dc2626' : '#30415eff' }}>Destination:</span>
+                    <span style={{ marginLeft: '0.5rem',color: '#888888'}}>{selectedEndId ? userMarkers.find(m => m.id === selectedEndId)?.name : 'Unspecified'}</span>
                 </div>
                 <button
                     onClick={handleGenerateRoute}
                     className={`kpath-generate-button ${isSelectingPath ? 'kpath-generate-button-selecting' : ''}`}
                     disabled={isLoading || userMarkers.length < 2 || isSelectingPath}
                 >
-                    {isSelectingPath ? (<><Loader className="w-5 h-5" style={{ animation: 'spin 1s linear infinite', marginRight: '0.5rem' }} /> 마커 선택 중...</>) : (<><Route className="w-5 h-5" style={{ marginRight: '0.5rem' }} /> 경로 생성 시작</>)}
+                    {isSelectingPath ? (<><Loader className="w-5 h-5" style={{ animation: 'spin 1s linear infinite', marginRight: '0.5rem' }} /> Selecting a marker...</>) : (<><Route className="w-5 h-5" style={{ marginRight: '0.5rem' }} /> Start Path Creation!</>)}
                 </button>
             </div>
              {/* 지도 컨테이너 */}

@@ -37,7 +37,7 @@ body {
 
 /* 성공 메시지 */
 .success-message {
-  color: #388e3c;
+  color: #738474;
   padding: 10px;
   margin: 10px 0;
   border: 1px solid #388e3c;
@@ -46,14 +46,14 @@ body {
 }
 
 /* 버튼 공통 스타일 */
-button {
+/* button {
   padding: 10px 20px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
   transition: all 0.3s;
-}
+} */
 
 button:disabled {
   opacity: 0.6;
@@ -70,13 +70,13 @@ button:disabled {
 }
 
 /* 입력 필드 공통 스타일 */
-input, textarea {
+/* input, textarea {
   width: 100%;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
-}
+} */
 
 input:focus, textarea:focus {
   outline: none;

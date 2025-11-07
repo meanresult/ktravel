@@ -1,0 +1,49 @@
+.kmedia-page {
+    min-height: 100vh;
+  background: linear-gradient(135deg, #E8D3B4 0%, #C1A27D 100%);
+
+
+
+
+    padding: 40px 20px;
+}
+
+.kmedia-container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-top: 30px;
+    text-align: center;
+}
+
+.kmedia-header-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 30px;
+    color: #222;
+}
+
+.kmedia-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.desc-add-btn {
+  width: 100%;
+  padding: 12px;
+  margin-top: 16px;
+  background: #ff8c59;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: white;
+  transition: 0.2s;
+}
+
+.desc-add-btn:hover {
+  background: #ff6b2e;
+  transform: translateY(-2px);
+}

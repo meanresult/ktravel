@@ -70,21 +70,17 @@
 
 /* .kpath-map-panel: 오른쪽 2/3 영역 컨테이너 */
 .kpath-map-panel {
-    padding: 20px;
+    padding:5px;
     display: flex;
     flex-direction: column;
     flex-grow: 1; /* 남은 공간 모두 차지 */
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 @media (min-width: 1024px) {
     .kpath-schedule-panel {
-        /* [수정] 고정 너비 350px 대신 50%로 설정 */
-        width: 20%;
-        /* [추가] 남은 공간을 균등하게 차지하도록 설정 */
+        width: 30%;
         flex-grow: 1; 
-        
         min-height: calc(100vh - 3rem); 
         overflow-y: auto; 
         margin-left: 1.0rem;
@@ -118,17 +114,24 @@
     font-weight: 700;
     color: #ffffff;
     margin-bottom: 0.5rem;
-    /* 모션 적용 */
-    opacity: 0; /* 초기 상태 안보이게 */
-    animation: fadeInUpKPath 1s ease-out forwards; /* 1초 동안 애니메이션 */
-}
+    
+    /* ✅ 항상 빛나도록 */
+    text-shadow: 
+        0 0 10px rgba(179, 234, 204, 0.8),
+        0 0 20px rgba(103, 154, 193, 0.7),
+        0 0 35px rgb(8, 74, 22);
 
+    text-align: center;
+    width: 100%;
+}
 .kpath-header-subtitle {
     font-size: 1.5rem;
     color: #c8cfdb;
     margin-bottom: 1.5rem; /* 모션 적용 */
     opacity: 0; /* 초기 상태 안보이게 */
-    animation: fadeInUpKPath 1s ease-out forwards; /* 1초 동안 애니메이션 */
+    animation: fadeInUpKPath 1s ease-out forwards; 
+    text-align: center; 
+    width: 100%;
 }
 
 /* ==================================== */

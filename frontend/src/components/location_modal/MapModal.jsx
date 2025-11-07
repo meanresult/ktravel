@@ -60,7 +60,7 @@ const MapModal = ({ concert, onClose, onAddSchedule }) => {
             icon: {
                 url: ConcertMarkerImg,
                 size: new naver.maps.Size(50, 50),
-                scaledSize: new naver.maps.Size(40, 45),
+                scaledSize: new naver.maps.Size(38, 45),
                 anchor: new naver.maps.Point(20, 40),
             },
             title: concert.title,
