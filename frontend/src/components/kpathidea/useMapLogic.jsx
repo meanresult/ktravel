@@ -42,7 +42,7 @@ const useMapLogic = (
         }
         if (window.naver && window.naver.maps && !isApiLoaded) {
             setIsApiLoaded(true);
-            setMessage("Naver Maps API 이미 로드됨.");
+            setMessage("Naver Maps API already Load");
             return;
         }
         if (isApiLoaded) return;
@@ -57,7 +57,7 @@ const useMapLogic = (
         script.onload = () => { 
             if (window.naver && window.naver.maps) {
                 setIsApiLoaded(true); 
-                setMessage("Naver Maps API 로드 성공.");
+                setMessage("Naver Maps API Load success.");
             } else {
                 setMessage("⚠️ Naver Maps 스크립트 로드되었으나 window.naver가 준비되지 않았습니다.");
             }
@@ -114,7 +114,7 @@ const useMapLogic = (
         setSelectedEndId(prev => prev === markerId ? null : prev);
 
         clearRoute();
-        setMessage('🗑️ 마커가 삭제되었습니다. 출발지/도착지를 다시 설정하세요.');
+        setMessage('🗑️ The marker has been deleted. Please set the departure/arrival points again.');
     }, [clearRoute, setMessage, mapObjectsRef, setUserMarkers, setSelectedStartId, setSelectedEndId]);
 
     const drawSegmentedPolyline = useCallback((segmentedPathData, routeData) => {
@@ -122,7 +122,7 @@ const useMapLogic = (
         clearRoute();
         // ... (경로 그리기 로직 유지)
         if (!Array.isArray(segmentedPathData) || segmentedPathData.length === 0) {
-             setMessage('⚠️ 그릴 경로 데이터가 없습니다.');
+             setMessage('⚠️ There is no path data to draw.');
              setIsSummaryVisible(false);
              return;
         }
@@ -161,7 +161,7 @@ const useMapLogic = (
         setRouteResult(routeData);
         setRoutePolyline(newPolylines); 
         setIsSummaryVisible(true);
-        setMessage('✅ 경로가 생성되었습니다. (구간별 색상 구분 적용)');
+        setMessage('✅ The route has been created. (Section-specific color distinctions applied)');
         
          try {
              if (bounds && typeof bounds.isEmpty === 'function' && !bounds.isEmpty()) {
@@ -270,7 +270,7 @@ const useMapLogic = (
         window.naver.maps.Event.addListener(marker, 'dblclick', () => {
              // 메모 모달 열기 함수 호출 시 현재 표시 이름과 마커 ID 전달
              openMemoModal({ id, name: displayTitle, lat, lng }); 
-             setMessage(`📝 '${displayTitle}' 마커 정보 입력/수정 창이 열렸습니다.`);
+             setMessage(`📝 '${displayTitle}' The marker information input/edit window has opened.`);
         });
 
         // ----------------------------------------------------------------------
@@ -283,13 +283,13 @@ const useMapLogic = (
 
                 if (!startId) {
                     setSelectedStartId(clickedId);
-                    setMessage(`1️⃣ 출발지: ${displayTitle} 설정 완료. 🎯 2. 도착지를 클릭하세요.`);
+                    setMessage(`1️⃣ Departure point: ${displayTitle} set. 🎯 2. Click your destination..`);
                 } else if (startId === clickedId) {
                     setSelectedStartId(null);
-                    setMessage(`출발지 선택이 해제되었습니다. 다시 1. 출발지를 클릭하세요.`);
+                    setMessage(`The departure location selection has been canceled. Please click 1. Departure Location again.`);
                 } else {
                     setSelectedEndId(clickedId);
-                    setMessage(`2️⃣ 도착지: ${displayTitle} 설정 완료. 경로 생성을 시작합니다.`);
+                    setMessage(`2️⃣ Destination: ${displayTitle} set. Starting route generation.`);
                     
                     const startMarkerData = stateRef.current.userMarkers.find(m => m.id === startId);
                     const endMarkerData = stateRef.current.userMarkers.find(m => m.id === clickedId);

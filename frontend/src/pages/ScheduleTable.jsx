@@ -176,7 +176,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
 
     const handleRemoveRow = useCallback((rowId) => { 
         if (!isDeletionModeActive) return;
-        if (window.confirm("정말로 삭제하시겠습니까?")) {
+        if (window.confirm("Are you sure you want to delete this?")) {
             setScheduleRows(prev => prev.filter(row => row.id !== rowId));
             setCellData(prev => {
                 const newData = {...prev};
@@ -188,7 +188,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
 
     const handleRemoveColumn = (column) => {
         if (!isDeletionModeActive) return;
-        if (window.confirm("정말로 삭제하시겠습니까?")) {
+        if (window.confirm("Are you sure you want to delete this?")) {
             setScheduleDays(prev => prev.filter(day => day !== column));
             setCellData(prev => {
                 const newData = {...prev};
@@ -199,11 +199,11 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
     };
 
     const handleAddColumn = () => {
-        const newColumn = prompt("추가할 항목 입력:");
+        const newColumn = prompt("Enter items to add:");
         if (newColumn && !scheduleDays.includes(newColumn)) {
             setScheduleDays([...scheduleDays, newColumn]);
         } else if (newColumn) {
-            alert("이미 존재합니다");
+            alert("It already exists.");
         }
     };
 

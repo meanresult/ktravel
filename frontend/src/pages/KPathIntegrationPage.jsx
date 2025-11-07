@@ -62,7 +62,7 @@ function KPathIntegrationPage() {
         }
 
         const destinations = await response.json();
-        console.log(`✅ 가져온 목적지 (${destinations.length}개):`, destinations);
+        console.log(`✅ Destinations fetched (${destinations.length}):`, destinations);
 
         // KPathIdeaPage의 마커 형식으로 변환
         const markers = destinations.map(dest => ({
@@ -132,7 +132,7 @@ function KPathIntegrationPage() {
             color: '#6366f1',
             fontWeight: 'bold' 
           }}>
-            📍 목적지 로딩 중...
+            📍 Loading destination...
           </div>
         )}
         

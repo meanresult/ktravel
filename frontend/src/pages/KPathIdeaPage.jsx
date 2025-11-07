@@ -27,7 +27,7 @@ function KPathIdeaPage({ scheduleLocation, scheduleLocations = [] }) {
     const [isSelectingPath, setIsSelectingPath] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [message, setMessage] = useState('🔍 장소 검색(자동완성 지원) 또는 입력 후 검색 버튼을 사용하세요.');
+    const [message, setMessage] = useState('🔍 Search by location (with autocomplete) or enter a location and use the search button.');
     const [isDeleteMode, setIsDeleteMode] = useState(false);
 
     const [markerMemos, setMarkerMemos] = useState({}); 
@@ -59,7 +59,7 @@ function KPathIdeaPage({ scheduleLocation, scheduleLocations = [] }) {
                 ));
                 
                 setModalContent(null);
-                setMessage(`📝 마커 '${newTitle}' 정보가 저장되었습니다.`);
+                setMessage(`📝 Marker'${newTitle}' information has been saved.`);
             },
             onClose: () => setModalContent(null)
         });
@@ -141,7 +141,7 @@ useEffect(() => {
     // --- 6. 경로 검색 함수 정의 ---
     const fetchRoute = useCallback(async (startLat, startLng, endLat, endLng) => {
         setIsLoading(true);
-        setMessage('🚌 대중교통 경로 검색 중...');
+        setMessage('🚌 Searching for public transportation routes...');
         setRouteResult(null);
 
         const requestBody = { startLat, startLng, endLat, endLng };
@@ -317,7 +317,7 @@ useEffect(() => {
                     console.warn('삭제 리스너 등록 실패', e);
                 }
             });
-            setMessage('🗑 삭제 모드 활성화 — 삭제하려면 마커를 클릭하세요.');
+            setMessage('🗑 Delete Mode Activated — Click the marker to delete.');
         } else {
             Object.keys(deleteListenersRef.current).forEach(key => {
                 try {
@@ -328,7 +328,7 @@ useEffect(() => {
                 } catch (e) { /* 무시 */ }
             });
             deleteListenersRef.current = {};
-            setMessage(prev => prev || '삭제 모드가 해제되었습니다.');
+            setMessage(prev => prev || 'Delete mode has been disabled..');
         }
 
         return () => {
@@ -350,7 +350,7 @@ useEffect(() => {
         clearRoute();
 
         if (userMarkers.length < 2) {
-            setMessage('⚠️ 경로 생성을 시작하려면 지도에 최소 두 개 이상의 마커가 있어야 합니다.');
+            setMessage('⚠️  To start creating a route, you must have at least two markers on the map.');
             return;
         }
 
