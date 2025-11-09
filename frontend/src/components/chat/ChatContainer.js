@@ -18,7 +18,136 @@ function ChatContainer({ onDestinationsUpdate }) {
     scrollToBottom();
   }, [messages]);
 
-  // 메시지 전송
+  // 🌊 Streaming 메시지 전송
+  const handleSendMessageStreaming = async (messageText) => {
+    // 1. 사용자 메시지 추가
+    const userMessage = {
+      text: messageText,
+      isUser: true,
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, userMessage]);
+    setLoading(true);
+
+    // 2. 봇 메시지 초기화 (빈 상태)
+    const botMessageId = Date.now();
+    const initialBotMessage = {
+      id: botMessageId,
+      text: '',
+      isUser: false,
+      isStreaming: true,
+      status: '🔍 검색 중...',
+      timestamp: new Date(),
+      results: null,
+      festivals: null,
+      attractions: null
+    };
+    setMessages((prev) => [...prev, initialBotMessage]);
+
+    // 3. 🌊 Streaming 시작!
+    try {
+      await chatService.sendMessageStreaming(messageText, {
+        // 검색 중
+        onSearching: (statusMessage) => {
+          setMessages(prev => prev.map(msg => 
+            msg.id === botMessageId 
+              ? { ...msg, status: statusMessage }
+              : msg
+          ));
+        },
+
+        // 결과 찾음
+        onFound: (title, result) => {
+          setMessages(prev => prev.map(msg => 
+            msg.id === botMessageId 
+              ? { 
+                  ...msg, 
+                  status: `✅ ${title} 찾음!`,
+                  results: [result]
+                }
+              : msg
+          ));
+        },
+
+        // 응답 생성 중
+        onGenerating: (statusMessage) => {
+          setMessages(prev => prev.map(msg => 
+            msg.id === botMessageId 
+              ? { ...msg, status: statusMessage }
+              : msg
+          ));
+        },
+
+        // 🌊 실시간 텍스트 청크!
+        onChunk: (chunk) => {
+          setMessages(prev => prev.map(msg => 
+            msg.id === botMessageId 
+              ? { 
+                  ...msg, 
+                  text: msg.text + chunk,
+                  status: null // 상태 메시지 제거
+                }
+              : msg
+          ));
+        },
+
+        // ✅ 완료!
+        onComplete: (data) => {
+          setMessages(prev => prev.map(msg => 
+            msg.id === botMessageId 
+              ? { 
+                  ...msg,
+                  text: data.full_response,
+                  isStreaming: false,
+                  results: data.results || (data.result ? [data.result] : null),
+                  festivals: data.festivals,
+                  attractions: data.attractions,
+                  conversId: data.convers_id
+                }
+              : msg
+          ));
+          setLoading(false);
+
+          // 여행지가 추출되었으면 부모에게 알림
+          if (data.extracted_destinations && data.extracted_destinations.length > 0) {
+            onDestinationsUpdate && onDestinationsUpdate();
+          }
+        },
+
+        // ❌ 에러
+        onError: (error) => {
+          setMessages(prev => prev.map(msg => 
+            msg.id === botMessageId 
+              ? { 
+                  ...msg,
+                  text: `에러: ${error}`,
+                  isStreaming: false,
+                  isError: true,
+                  status: null
+                }
+              : msg
+          ));
+          setLoading(false);
+        }
+      });
+    } catch (error) {
+      console.error('Streaming error:', error);
+      setMessages(prev => prev.map(msg => 
+        msg.id === botMessageId 
+          ? { 
+              ...msg,
+              text: '죄송합니다. 메시지 전송 중 오류가 발생했습니다.',
+              isStreaming: false,
+              isError: true,
+              status: null
+            }
+          : msg
+      ));
+      setLoading(false);
+    }
+  };
+
+  // 일반 메시지 전송 (기존 방식 - 백업용)
   const handleSendMessage = async (messageText) => {
     // 사용자 메시지 추가
     const userMessage = {
@@ -37,7 +166,10 @@ function ChatContainer({ onDestinationsUpdate }) {
       const gptMessage = {
         text: response.response,
         isUser: false,
-        timestamp: new Date(response.datetime),
+        timestamp: new Date(),
+        results: response.results,
+        festivals: response.festivals,
+        attractions: response.attractions
       };
       setMessages((prev) => [...prev, gptMessage]);
 
@@ -51,6 +183,7 @@ function ChatContainer({ onDestinationsUpdate }) {
       const errorMessage = {
         text: '죄송합니다. 메시지 전송 중 오류가 발생했습니다.',
         isUser: false,
+        isError: true,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -70,9 +203,8 @@ function ChatContainer({ onDestinationsUpdate }) {
         ) : (
           messages.map((msg, index) => (
             <ChatMessage
-              key={index}
-              message={msg.text}
-              isUser={msg.isUser}
+              key={msg.id || index}
+              message={msg}
             />
           ))
         )}
@@ -88,7 +220,8 @@ function ChatContainer({ onDestinationsUpdate }) {
         <div ref={messagesEndRef} />
       </div>
 
-      <ChatInput onSend={handleSendMessage} disabled={loading} />
+      {/* 🌊 Streaming 방식 사용 */}
+      <ChatInput onSend={handleSendMessageStreaming} disabled={loading} />
     </div>
   );
 }

@@ -23,9 +23,11 @@ function KDH_ChatbotPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
+    // 🌊 Streaming 메시지 전송
     const handleSendMessage = async (text) => {
         if (!text.trim()) return;
 
+        // 1. 사용자 메시지 추가
         const userMessage = {
             id: Date.now(),
             text: text,
@@ -35,13 +37,26 @@ function KDH_ChatbotPage() {
         setMessages(prev => [...prev, userMessage]);
         setLoading(true);
 
+        // 2. 빈 AI 메시지 생성 (Streaming용)
+        const aiMessageId = Date.now() + 1;
+        const initialAiMessage = {
+            id: aiMessageId,
+            text: '',
+            isUser: false,
+            isStreaming: true,
+            status: '🔍 검색 중...',
+            timestamp: new Date()
+        };
+        setMessages(prev => [...prev, initialAiMessage]);
+
         try {
             const sessionId = localStorage.getItem('session_id');
             if (!sessionId) {
                 throw new Error('로그인이 필요합니다');
             }
 
-            const response = await fetch('http://localhost:8000/api/chat/send', {
+            // 3. 🌊 Streaming 요청!
+            const response = await fetch('http://localhost:8000/api/chat/send/stream', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -57,35 +72,125 @@ function KDH_ChatbotPage() {
                 throw new Error('Failed to send message');
             }
 
-            const data = await response.json();
+            // 4. 🌊 Stream 읽기
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
 
-            // 🎯 AI 응답 추가 (results 포함)
-            const aiMessage = {
-                id: Date.now() + 1,
-                text: data.response,
-                isUser: false,
-                timestamp: new Date(),
-                extractedDestinations: data.extracted_destinations || [],
-                results: data.results || [],              // 🎯 통합 결과 추가
-                festivals: data.festivals || [],
-                attractions: data.attractions || [],
-                hasFestivals: data.has_festivals,
-                hasAttractions: data.has_attractions
-            };
-            setMessages(prev => [...prev, aiMessage]);
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
-            // 🎯 지도 마커 추가
-            if (data.map_markers && data.map_markers.length > 0) {
-                if (window.addMapMarkers) {
-                    window.addMapMarkers(data.map_markers);
-                } else {
-                    if (data.has_festivals && window.addFestivalMarkers) {
-                        const festivalMarkers = data.map_markers.filter(m => m.type === 'festival');
-                        window.addFestivalMarkers(festivalMarkers);
-                    }
-                    if (data.has_attractions && window.addAttractionMarkers) {
-                        const attractionMarkers = data.map_markers.filter(m => m.type === 'attraction');
-                        window.addAttractionMarkers(attractionMarkers);
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            
+                            switch (data.type) {
+                                case 'searching':
+                                case 'random':
+                                    // 검색 중 상태
+                                    setMessages(prev => prev.map(msg => 
+                                        msg.id === aiMessageId 
+                                            ? { ...msg, status: data.message }
+                                            : msg
+                                    ));
+                                    break;
+
+                                case 'found':
+                                    // 결과 찾음
+                                    setMessages(prev => prev.map(msg => 
+                                        msg.id === aiMessageId 
+                                            ? { 
+                                                ...msg, 
+                                                status: `✅ ${data.title} 찾음!`,
+                                                results: [data.result]
+                                              }
+                                            : msg
+                                    ));
+                                    break;
+
+                                case 'generating':
+                                    // 응답 생성 중
+                                    setMessages(prev => prev.map(msg => 
+                                        msg.id === aiMessageId 
+                                            ? { ...msg, status: data.message }
+                                            : msg
+                                    ));
+                                    break;
+
+                                case 'chunk':
+                                    // 🌊 실시간 텍스트 청크!
+                                    setMessages(prev => prev.map(msg => 
+                                        msg.id === aiMessageId 
+                                            ? { 
+                                                ...msg, 
+                                                text: msg.text + data.content,
+                                                status: null
+                                              }
+                                            : msg
+                                    ));
+                                    break;
+
+                                case 'done':
+                                    // ✅ 완료!
+                                    setMessages(prev => prev.map(msg => 
+                                        msg.id === aiMessageId 
+                                            ? { 
+                                                ...msg,
+                                                text: data.full_response,
+                                                isStreaming: false,
+                                                extractedDestinations: data.extracted_destinations || [],
+                                                results: data.results || (data.result ? [data.result] : []),
+                                                festivals: data.festivals || [],
+                                                attractions: data.attractions || [],
+                                                hasFestivals: data.has_festivals,
+                                                hasAttractions: data.has_attractions
+                                              }
+                                            : msg
+                                    ));
+                                    setLoading(false);
+
+                                    // 🎯 지도 마커 추가
+                                    if (data.map_markers && data.map_markers.length > 0) {
+                                        if (window.addMapMarkers) {
+                                            window.addMapMarkers(data.map_markers);
+                                        } else {
+                                            if (data.has_festivals && window.addFestivalMarkers) {
+                                                const festivalMarkers = data.map_markers.filter(m => m.type === 'festival');
+                                                window.addFestivalMarkers(festivalMarkers);
+                                            }
+                                            if (data.has_attractions && window.addAttractionMarkers) {
+                                                const attractionMarkers = data.map_markers.filter(m => m.type === 'attraction');
+                                                window.addAttractionMarkers(attractionMarkers);
+                                            }
+                                        }
+                                    }
+                                    break;
+
+                                case 'error':
+                                    // ❌ 에러
+                                    setMessages(prev => prev.map(msg => 
+                                        msg.id === aiMessageId 
+                                            ? { 
+                                                ...msg,
+                                                text: data.message,
+                                                isStreaming: false,
+                                                isError: true,
+                                                status: null
+                                              }
+                                            : msg
+                                    ));
+                                    setLoading(false);
+                                    break;
+                            }
+                        } catch (e) {
+                            console.error('JSON parse error:', e);
+                        }
                     }
                 }
             }
@@ -93,16 +198,20 @@ function KDH_ChatbotPage() {
         } catch (error) {
             console.error('Error sending message:', error);
             
-            const errorMessage = {
-                id: Date.now() + 1,
-                text: error.message === '로그인이 필요합니다' || error.message === '로그인이 만료되었습니다. 다시 로그인해주세요.' 
-                    ? error.message 
-                    : 'Sorry, something went wrong. Please try again.',
-                isUser: false,
-                timestamp: new Date(),
-                isError: true
-            };
-            setMessages(prev => [...prev, errorMessage]);
+            setMessages(prev => prev.map(msg => 
+                msg.id === aiMessageId 
+                    ? { 
+                        ...msg,
+                        text: error.message === '로그인이 필요합니다' || error.message === '로그인이 만료되었습니다. 다시 로그인해주세요.' 
+                            ? error.message 
+                            : 'Sorry, something went wrong. Please try again.',
+                        isStreaming: false,
+                        isError: true,
+                        status: null
+                      }
+                    : msg
+            ));
+            setLoading(false);
 
             if (error.message.includes('로그인')) {
                 localStorage.removeItem('session_id');
@@ -110,8 +219,6 @@ function KDH_ChatbotPage() {
                     window.location.href = '/';
                 }, 2000);
             }
-        } finally {
-            setLoading(false);
         }
     };
 
