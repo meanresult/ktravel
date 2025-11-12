@@ -5,16 +5,19 @@ import json
 import os
 import random
 import re
+import asyncio
 from langchain_openai import OpenAIEmbeddings
 from qdrant_client import QdrantClient
 from concurrent.futures import ThreadPoolExecutor
 
 from app.models.conversation import Conversation  
 from app.models.festival import Festival
-from app.utils.openai_client import chat_with_gpt
+from app.utils.openai_client import chat_with_gpt, chat_with_gpt_stream
 from app.utils.prompts import (
     KPOP_FESTIVAL_QUICK_PROMPT,
-    KPOP_ATTRACTION_QUICK_PROMPT
+    KPOP_ATTRACTION_QUICK_PROMPT,
+    COMPARISON_PROMPT,
+    ADVICE_PROMPT
 )
 
 class ChatService:
@@ -48,10 +51,162 @@ class ChatService:
             )
         return ChatService._qdrant_client
     
+    # ===== 🔧 검색어 개선 기능 =====
+    
+    @staticmethod
+    def _preprocess_query(query: str) -> str:
+        """검색 전 쿼리 정리"""
+        
+        # 1. 불용어 제거
+        stopwords = {"a", "an", "the", "in", "at", "on", "me", "to", "introduce", "tell", "show", "explain", "describe"}
+        words = [w for w in query.lower().split() if w not in stopwords]
+        
+        # 2. 재조합
+        cleaned_query = " ".join(words)
+        
+        print(f"🔧 쿼리 정리: '{query}' → '{cleaned_query}'")
+        return cleaned_query if cleaned_query else query
+    
+    @staticmethod
+    def _normalize_query(query: str) -> str:
+        """검색어를 정규화하여 더 정확한 매칭"""
+        
+        # 일반적인 장소명 보정 (자동화된 패턴)
+        corrections = {
+            "namsan tower": "namsan seoul tower",
+            "n tower": "namsan seoul tower", 
+            "seoul tower": "namsan seoul tower",
+            "63 building": "63빌딩",
+            "lotte tower": "lotte world tower",
+            "dongdaemun": "dongdaemun design plaza",
+            "myeongdong": "myeongdong shopping street",
+            "gangnam": "gangnam district",
+            "hongdae": "hongik university area",
+            "bukchon": "bukchon hanok village",
+            "insadong": "insadong cultural street",
+            "itaewon": "itaewon global village",
+        }
+        
+        query_lower = query.lower()
+        
+        for wrong, correct in corrections.items():
+            if wrong in query_lower:
+                query = query.replace(wrong, correct)
+                print(f"🔧 검색어 보정: '{wrong}' → '{correct}'")
+        
+        return query
+    
+    @staticmethod
+    def _expand_search_terms(query: str) -> List[str]:
+        """검색어를 자동으로 확장"""
+        
+        variants = [query]
+        
+        # 자동 변형 규칙들
+        query_lower = query.lower()
+        
+        # 서울 추가
+        if "seoul" not in query_lower and len(query.split()) <= 2:
+            variants.append(f"{query} seoul")
+            variants.append(f"seoul {query}")
+        
+        # 일반적인 단어 변형
+        if "tower" in query_lower:
+            variants.append(query.replace("tower", "타워").replace("Tower", "타워"))
+        if "palace" in query_lower:
+            variants.append(query.replace("palace", "궁").replace("Palace", "궁"))
+        if "temple" in query_lower:
+            variants.append(query.replace("temple", "사").replace("Temple", "사"))
+        if "market" in query_lower:
+            variants.append(query.replace("market", "시장").replace("Market", "시장"))
+        if "park" in query_lower:
+            variants.append(query.replace("park", "공원").replace("Park", "공원"))
+        
+        return list(set(variants))  # 중복 제거
+    
+    @staticmethod
+    def _calculate_keyword_overlap(query: str, title: str) -> float:
+        """키워드 겹치는 정도 계산"""
+        query_words = set(query.lower().split())
+        title_words = set(title.lower().split())
+        
+        overlap = len(query_words & title_words)
+        total = len(query_words | title_words)
+        
+        return overlap / total if total > 0 else 0
+    
+    @staticmethod
+    def _improved_search(query: str, search_type: str = "attraction") -> Dict[str, Any]:
+        """🔧 현실적으로 개선된 검색"""
+        
+        try:
+            print(f"🔍 개선된 검색 시작: '{query}' (타입: {search_type})")
+            
+            # 1. 쿼리 전처리 (불용어 제거)
+            cleaned_query = ChatService._preprocess_query(query)
+            
+            # 2. 검색어 정규화
+            normalized_query = ChatService._normalize_query(cleaned_query)
+            
+            # 3. 검색어 확장
+            search_variants = ChatService._expand_search_terms(normalized_query)
+            print(f"🔧 검색 변형들: {search_variants}")
+            
+            # 4. 모든 변형으로 검색
+            best_result = None
+            best_score = 0
+            
+            qdrant_client = ChatService._get_qdrant_client()
+            embedding_model = ChatService._get_embedding_model()
+            collection_name = ChatService.ATTRACTION_COLLECTION if search_type == "attraction" else ChatService.COLLECTION_NAME
+            
+            for variant in search_variants:
+                try:
+                    query_embedding = embedding_model.embed_query(variant)
+                    
+                    search_results = qdrant_client.search(
+                        collection_name=collection_name,
+                        query_vector=query_embedding,
+                        limit=5,
+                        score_threshold=0.3,  # 낮은 임계값으로 더 많은 결과
+                        with_payload=True,
+                        with_vectors=False
+                    )
+                    
+                    for result in search_results:
+                        # Vector 유사도 + 키워드 매칭 점수
+                        vector_score = result.score
+                        keyword_score = ChatService._calculate_keyword_overlap(cleaned_query, result.payload.get("metadata", {}).get("title", ""))
+                        combined_score = vector_score * 0.8 + keyword_score * 0.2
+                        
+                        if combined_score > best_score:
+                            best_score = combined_score
+                            best_result = result
+                            print(f"✅ 더 좋은 결과: '{variant}' → 점수: {combined_score:.3f}")
+                
+                except Exception as e:
+                    print(f"⚠️ 변형 '{variant}' 검색 실패: {e}")
+                    continue
+            
+            # 5. 결과 반환 (임계값 0.5)
+            if best_result and best_score > 0.5:
+                return best_result
+            else:
+                print(f"❌ 유효한 결과 없음 (최고 점수: {best_score:.3f})")
+                return None
+                
+        except Exception as e:
+            print(f"❌ 개선된 검색 오류: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+    
+    # ===== 메인 메시지 처리 함수 =====
+    
     @staticmethod
     def send_message(db: Session, user_id: int, message: str) -> Dict[str, Any]:
         """
-        🚀 최적화된 메시지 처리 - 21초 → 1-3초
+        🚀 최적화된 메시지 처리 - 질문 타입별 처리
         - GPT 사용 최소화 (템플릿 우선)
         - 벡터 검색 병렬화
         - Lumi 컨셉 완전히 유지
@@ -69,23 +224,97 @@ class ChatService:
             is_kpop_mode = conversation_count < 50
             
             if is_kpop_mode:
-                print(f"🎤 K-pop 데몬헌터스 Lumi 모드 (대화 {conversation_count + 1}/10)")
+                print(f"🎤 K-pop 데몬헌터스 Lumi 모드 (대화 {conversation_count + 1}/50)")
             else:
                 print(f"📚 일반 모드 (대화 {conversation_count + 1}번째)")
             
-            # 🚀 1. 빠른 키워드 추출 (GPT 완전 제거)
+            # 🚀 1. 빠른 키워드 추출 + 질문 타입 분류
             step_start = time.time()
             analysis = ChatService._analyze_message_fast(message)
             print(f"⏱️ 1. 키워드 추출: {time.time() - step_start:.3f}초")
             
+            question_type = analysis.get('type', 'place_search')
             keyword = analysis.get('keyword', message)
             is_random = analysis.get('is_random_recommendation', False)
             
+            # ===== 질문 타입별 처리 =====
+            
+            # 🤔 비교 질문 처리
+            if question_type == "comparison":
+                print(f"🤔 비교 질문 감지 → GPT 직접 처리")
+                
+                prompt = COMPARISON_PROMPT.format(message=message)
+                
+                ai_response = chat_with_gpt(
+                    [{"role": "user", "content": prompt}],
+                    max_tokens=300,
+                    temperature=0.7
+                )
+                
+                conversation = Conversation(
+                    user_id=user_id,
+                    question=message,
+                    response=ai_response
+                )
+                db.add(conversation)
+                db.commit()
+                db.refresh(conversation)
+                
+                print(f"⏱️ 총 소요 시간: {time.time() - total_start:.3f}초\n")
+                
+                return {
+                    "response": ai_response,
+                    "convers_id": conversation.convers_id,
+                    "extracted_destinations": [],
+                    "results": [],
+                    "festivals": [],
+                    "attractions": [],
+                    "has_festivals": False,
+                    "has_attractions": False,
+                    "map_markers": []
+                }
+            
+            # 💡 일반 조언/팁 질문 처리
+            elif question_type == "general_advice":
+                print(f"💡 일반 조언 질문 감지 → GPT 직접 처리")
+                
+                prompt = ADVICE_PROMPT.format(message=message)
+                
+                ai_response = chat_with_gpt(
+                    [{"role": "user", "content": prompt}],
+                    max_tokens=350,
+                    temperature=0.7
+                )
+                
+                conversation = Conversation(
+                    user_id=user_id,
+                    question=message,
+                    response=ai_response
+                )
+                db.add(conversation)
+                db.commit()
+                db.refresh(conversation)
+                
+                print(f"⏱️ 총 소요 시간: {time.time() - total_start:.3f}초\n")
+                
+                return {
+                    "response": ai_response,
+                    "convers_id": conversation.convers_id,
+                    "extracted_destinations": [],
+                    "results": [],
+                    "festivals": [],
+                    "attractions": [],
+                    "has_festivals": False,
+                    "has_attractions": False,
+                    "map_markers": []
+                }
+            
             # 🎯 랜덤 추천 처리
-            if is_random:
-                step_start = time.time()
-                random_attractions = ChatService._get_random_attractions(count=10)
-                print(f"⏱️ 2. 랜덤 추천: {time.time() - step_start:.3f}초")
+            elif is_random or question_type == "random_recommendation":
+                print(f"🎯 추천 질문 감지 → 수량 기반 추천")
+                
+                count = analysis.get('count', 10)
+                random_attractions = ChatService._get_random_attractions(count=count)
                 
                 if is_kpop_mode:
                     ai_response = ChatService._generate_kpop_random_response(random_attractions)
@@ -115,101 +344,339 @@ class ChatService:
                     "map_markers": []
                 }
             
-            # 🚀 2. 축제 + 관광명소 병렬 검색 (1.2초 → 0.6초!)
-            step_start = time.time()
-            
-            with ThreadPoolExecutor(max_workers=2) as executor:
-                festival_future = executor.submit(ChatService._search_best_festival, keyword)
-                attraction_future = executor.submit(ChatService._search_best_attraction, keyword)
-                
-                festival = festival_future.result()
-                attraction = attraction_future.result()
-            
-            print(f"⏱️ 2. 병렬 검색: {time.time() - step_start:.3f}초")
-            
-            # 결과 수집
-            results = []
-            if festival:
-                festival['type'] = 'festival'
-                results.append(festival)
-            if attraction:
-                attraction['type'] = 'attraction'
-                results.append(attraction)
-            
-            # 유사도 높은 것 1개만 선택
-            if results:
-                results.sort(key=lambda x: x['similarity_score'], reverse=True)
-                best_result = [results[0]]
+            # 🚀 특정 장소 검색 (기본 동작 - 개선된 검색 적용)
             else:
-                best_result = []
-            
-            # 🚀 3. 응답 생성 (템플릿 우선, 필요시 경량 GPT)
-            step_start = time.time()
-            ai_response = ChatService._generate_final_response(
-                message, best_result, is_kpop_mode
-            )
-            print(f"⏱️ 3. 응답 생성: {time.time() - step_start:.3f}초")
-            
-            # 4. DB 저장
-            step_start = time.time()
-            conversation = Conversation(
-                user_id=user_id,
-                question=message,
-                response=ai_response
-            )
-            db.add(conversation)
-            db.commit()
-            db.refresh(conversation)
-            print(f"⏱️ 4. DB 저장: {time.time() - step_start:.3f}초")
-            
-            print(f"⏱️ 총 소요 시간: {time.time() - total_start:.3f}초\n")
-            
-            # 5. 응답 구성
-            return {
-                "response": ai_response,
-                "convers_id": conversation.convers_id,
-                "extracted_destinations": [],
-                "results": best_result,
-                "festivals": [r for r in best_result if r.get('type') == 'festival'],
-                "attractions": [r for r in best_result if r.get('type') == 'attraction'],
-                "has_festivals": any(r.get('type') == 'festival' for r in best_result),
-                "has_attractions": any(r.get('type') == 'attraction' for r in best_result),
-                "map_markers": ChatService._create_map_markers(best_result)
-            }
+                # 🚀 2. 축제 + 관광명소 병렬 검색 (개선된 버전)
+                step_start = time.time()
+                
+                with ThreadPoolExecutor(max_workers=2) as executor:
+                    festival_future = executor.submit(ChatService._search_best_festival, keyword)
+                    attraction_future = executor.submit(ChatService._search_best_attraction, keyword)
+                    
+                    festival = festival_future.result()
+                    attraction = attraction_future.result()
+                
+                print(f"⏱️ 2. 개선된 병렬 검색: {time.time() - step_start:.3f}초")
+                
+                # 결과 수집
+                results = []
+                if festival:
+                    festival['type'] = 'festival'
+                    results.append(festival)
+                if attraction:
+                    attraction['type'] = 'attraction'
+                    results.append(attraction)
+                
+                # 유사도 높은 것 1개만 선택
+                if results:
+                    results.sort(key=lambda x: x['similarity_score'], reverse=True)
+                    best_result = [results[0]]
+                else:
+                    best_result = []
+                
+                # 🚀 3. 응답 생성 (템플릿 우선, 필요시 경량 GPT)
+                step_start = time.time()
+                ai_response = ChatService._generate_final_response(
+                    message, best_result, is_kpop_mode
+                )
+                print(f"⏱️ 3. 응답 생성: {time.time() - step_start:.3f}초")
+                
+                # 4. DB 저장
+                step_start = time.time()
+                conversation = Conversation(
+                    user_id=user_id,
+                    question=message,
+                    response=ai_response
+                )
+                db.add(conversation)
+                db.commit()
+                db.refresh(conversation)
+                print(f"⏱️ 4. DB 저장: {time.time() - step_start:.3f}초")
+                
+                print(f"⏱️ 총 소요 시간: {time.time() - total_start:.3f}초\n")
+                
+                # 5. 응답 구성
+                return {
+                    "response": ai_response,
+                    "convers_id": conversation.convers_id,
+                    "extracted_destinations": [],
+                    "results": best_result,
+                    "festivals": [r for r in best_result if r.get('type') == 'festival'],
+                    "attractions": [r for r in best_result if r.get('type') == 'attraction'],
+                    "has_festivals": any(r.get('type') == 'festival' for r in best_result),
+                    "has_attractions": any(r.get('type') == 'attraction' for r in best_result),
+                    "map_markers": ChatService._create_map_markers(best_result)
+                }
             
         except Exception as e:
             raise Exception(f"채팅 처리 중 오류 발생: {str(e)}")
     
     @staticmethod
-    def _analyze_message_fast(message: str) -> Dict[str, Any]:
+    async def send_message_streaming(db: Session, user_id: int, message: str):
         """
-        🚀 초고속 키워드 분석 (GPT 완전 제거)
+        🌊 스트리밍 메시지 처리 - 제너레이터 반환
         """
         try:
-            message_lower = message.lower()
+            # 🚀 1. 질문 타입 분석
+            analysis = ChatService._analyze_message_fast(message)
+            question_type = analysis.get('type', 'place_search')
+            keyword = analysis.get('keyword', message)
+            is_random = analysis.get('is_random_recommendation', False)
             
-            # 🎯 랜덤 추천 감지
-            random_keywords = ['가볼만한', '추천', '어디 갈', '관광지', '명소', '갈만한', '여행지', 'recommend', 'suggestions']
-            if any(keyword in message_lower for keyword in random_keywords):
-                print(f"🎲 랜덤 추천 감지: '{message}'")
-                return {"is_random_recommendation": True, "keyword": ""}
+            print(f"📋 스트리밍 분석: type={question_type}, keyword={keyword}")
             
-            # 🚀 단순 키워드 추출 (GPT 없이)
-            keyword = ChatService._extract_keyword_simple(message)
-            print(f"🚀 키워드 추출 (GPT 생략): '{keyword}'")
+            # ===== 질문 타입별 처리 =====
             
-            return {
-                "is_random_recommendation": False,
-                "keyword": keyword
-            }
+            # 🤔 비교 질문 처리
+            if question_type == "comparison":
+                yield f"data: {json.dumps({'type': 'generating', 'message': '🤔 Lumi가 비교 분석 중...'}, ensure_ascii=False)}\n\n"
                 
+                prompt = COMPARISON_PROMPT.format(message=message)
+                
+                # 스트리밍 응답
+                full_response = ""
+                for chunk in chat_with_gpt_stream([{"role": "user", "content": prompt}], max_tokens=300, temperature=0.7):
+                    full_response += chunk
+                    yield f"data: {json.dumps({'type': 'chunk', 'content': chunk}, ensure_ascii=False)}\n\n"
+                    await asyncio.sleep(0.02)
+                
+                # 대화 저장
+                conversation = Conversation(user_id=user_id, question=message, response=full_response)
+                db.add(conversation)
+                db.commit()
+                db.refresh(conversation)
+                
+                yield f"data: {json.dumps({'type': 'done', 'full_response': full_response, 'convers_id': conversation.convers_id, 'results': [], 'festivals': [], 'attractions': [], 'has_festivals': False, 'has_attractions': False}, ensure_ascii=False)}\n\n"
+                return
+            
+            # 💡 일반 조언/팁 질문 처리
+            elif question_type == "general_advice":
+                yield f"data: {json.dumps({'type': 'generating', 'message': '💡 Lumi가 여행 팁 준비 중...'}, ensure_ascii=False)}\n\n"
+                
+                prompt = ADVICE_PROMPT.format(message=message)
+                
+                # 스트리밍 응답
+                full_response = ""
+                for chunk in chat_with_gpt_stream([{"role": "user", "content": prompt}], max_tokens=350, temperature=0.7):
+                    full_response += chunk
+                    yield f"data: {json.dumps({'type': 'chunk', 'content': chunk}, ensure_ascii=False)}\n\n"
+                    await asyncio.sleep(0.02)
+                
+                # 대화 저장
+                conversation = Conversation(user_id=user_id, question=message, response=full_response)
+                db.add(conversation)
+                db.commit()
+                db.refresh(conversation)
+                
+                yield f"data: {json.dumps({'type': 'done', 'full_response': full_response, 'convers_id': conversation.convers_id, 'results': [], 'festivals': [], 'attractions': [], 'has_festivals': False, 'has_attractions': False}, ensure_ascii=False)}\n\n"
+                return
+            
+            # 🎯 랜덤 추천 처리
+            elif is_random or question_type == "random_recommendation":
+                yield f"data: {json.dumps({'type': 'random', 'message': '🎲 랜덤 추천 준비 중...'}, ensure_ascii=False)}\n\n"
+                
+                random_attractions = ChatService._get_random_attractions(count=10)
+                ai_response = ChatService._generate_kpop_random_response(random_attractions)
+                
+                # 대화 저장
+                conversation = Conversation(user_id=user_id, question=message, response=ai_response)
+                db.add(conversation)
+                db.commit()
+                db.refresh(conversation)
+                
+                yield f"data: {json.dumps({'type': 'done', 'full_response': ai_response, 'results': random_attractions, 'attractions': random_attractions, 'convers_id': conversation.convers_id, 'has_festivals': False, 'has_attractions': True}, ensure_ascii=False)}\n\n"
+                return
+            
+            # 🚀 특정 장소 검색 (기본 동작)
+            else:
+                yield f"data: {json.dumps({'type': 'searching', 'message': '🔍 Lumi가 정보를 찾고 있어요...'}, ensure_ascii=False)}\n\n"
+                
+                # 병렬 검색
+                with ThreadPoolExecutor(max_workers=2) as executor:
+                    festival_future = executor.submit(ChatService._search_best_festival, keyword)
+                    attraction_future = executor.submit(ChatService._search_best_attraction, keyword)
+                    
+                    festival = festival_future.result()
+                    attraction = attraction_future.result()
+                
+                # 결과 수집
+                results = []
+                if festival:
+                    festival['type'] = 'festival'
+                    results.append(festival)
+                if attraction:
+                    attraction['type'] = 'attraction'
+                    results.append(attraction)
+                
+                if not results:
+                    yield f"data: {json.dumps({'type': 'error', 'message': '어이쿠, Hunters! 그 장소를 찾을 수 없네... 🔥'}, ensure_ascii=False)}\n\n"
+                    return
+                
+                # 유사도 높은 것 선택
+                results.sort(key=lambda x: x['similarity_score'], reverse=True)
+                result = results[0]
+                
+                yield f"data: {json.dumps({'type': 'found', 'title': result['title'], 'result': result}, ensure_ascii=False)}\n\n"
+                
+                yield f"data: {json.dumps({'type': 'generating', 'message': '💫 Lumi가 응답하는 중...'}, ensure_ascii=False)}\n\n"
+                
+                # 프롬프트 생성
+                title = result.get('title', '')
+                description = result.get('description', '')[:500]
+                result_type = result.get('type', 'attraction')
+                
+                if result_type == 'festival':
+                    prompt = KPOP_FESTIVAL_QUICK_PROMPT.format(
+                        title=title,
+                        start_date=result.get('start_date', ''),
+                        end_date=result.get('end_date', ''),
+                        description=description,
+                        message=message
+                    )
+                else:
+                    prompt = KPOP_ATTRACTION_QUICK_PROMPT.format(
+                        title=title,
+                        address=result.get('address', ''),
+                        hours_of_operation=result.get('hours_of_operation', '운영시간 정보 없음'),
+                        description=description,
+                        message=message
+                    )
+                
+                # 스트리밍 응답
+                full_response = ""
+                for chunk in chat_with_gpt_stream([{"role": "user", "content": prompt}], max_tokens=250, temperature=0.6):
+                    full_response += chunk
+                    yield f"data: {json.dumps({'type': 'chunk', 'content': chunk}, ensure_ascii=False)}\n\n"
+                    await asyncio.sleep(0.02)
+                
+                # 대화 저장
+                conversation = Conversation(user_id=user_id, question=message, response=full_response)
+                db.add(conversation)
+                db.commit()
+                db.refresh(conversation)
+                
+                # 지도 마커 생성
+                map_markers = ChatService._create_map_markers([result])
+                
+                # 완료 메시지
+                completion_data = {
+                    'type': 'done',
+                    'full_response': full_response,
+                    'convers_id': conversation.convers_id,
+                    'result': result,
+                    'results': [result],
+                    'festivals': [r for r in [result] if r.get('type') == 'festival'],
+                    'attractions': [r for r in [result] if r.get('type') == 'attraction'],
+                    'has_festivals': result.get('type') == 'festival',
+                    'has_attractions': result.get('type') == 'attraction',
+                    'map_markers': map_markers
+                }
+                
+                yield f"data: {json.dumps(completion_data, ensure_ascii=False)}\n\n"
+            
+        except Exception as e:
+            print(f"❌ Streaming 오류: {e}")
+            import traceback
+            traceback.print_exc()
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)}, ensure_ascii=False)}\n\n"
+    
+    @staticmethod
+    def _analyze_message_fast(message: str) -> Dict[str, Any]:
+        """
+        🚀 초고속 키워드 분석 - 질문 타입 자동 분류 + 수량 추출
+        """
+        try:
+            message_lower = message.lower().strip()
+            
+            print(f"\n🔍 질문 분석 시작: '{message}'")
+            
+            # === 수량 추출 추가 ===
+            import re
+            number_patterns = [
+                r'(\d+)곳', r'(\d+)개', r'(\d+)가지',
+                r'(\d+)\s*places?', r'(\d+)\s*spots?'
+            ]
+            
+            extracted_count = None
+            for pattern in number_patterns:
+                match = re.search(pattern, message_lower)
+                if match:
+                    extracted_count = int(match.group(1))
+                    print(f"   ✅ 수량 발견: {extracted_count}개")
+                    break
+            
+            # === 기존 비교 질문 감지 ===
+            comparison_patterns = [
+                ' vs ', 'vs.', ' versus ', 'which one', 'which is better'
+            ]
+            for pattern in comparison_patterns:
+                if pattern in message_lower:
+                    return {
+                        "type": "comparison",
+                        "keyword": message,
+                        "count": extracted_count
+                    }
+            
+            # === 일반 조언/팁 질문 감지 강화 ===
+            advice_patterns = [
+                'tip', 'tips', 'advice', '팁', '조언',
+                'how to', '어떻게', '방법',
+                'what should i know', '알아야', '준비',
+                'culture', '문화', 'etiquette', '에티켓',
+                'transportation', '교통', 'subway', '지하철',
+                'weather', '날씨', 'money', '돈', '환전'
+            ]
+            
+            # 장소명 없으면서 조언 키워드가 있으면 조언 질문
+            has_advice_keyword = any(kw in message_lower for kw in advice_patterns)
+            
+            place_keywords = [
+                'palace', 'temple', 'tower', 'museum', 'park',
+                '궁', '사찰', '타워', '박물관', '공원',
+                'gangnam', 'hongdae', 'myeongdong', 'itaewon',
+                '강남', '홍대', '명동', '이태원'
+            ]
+            has_place = any(place in message_lower for place in place_keywords)
+            
+            if has_advice_keyword and not has_place:
+                return {
+                    "type": "general_advice",
+                    "keyword": message,
+                    "count": extracted_count
+                }
+            
+            # === 추천 질문 감지 강화 ===
+            recommendation_patterns = [
+                'recommend', 'suggestion', 'suggest', '추천',
+                'places to visit', 'where to go', '가볼',
+                'best places', 'top places', '명소'
+            ]
+            
+            has_recommendation = any(kw in message_lower for kw in recommendation_patterns)
+            
+            if has_recommendation or extracted_count:
+                return {
+                    "type": "recommendation",
+                    "keyword": message,
+                    "count": extracted_count or 10  # 기본값 10개
+                }
+            
+            # === 특정 장소 검색 (기본) ===
+            keyword = ChatService._extract_keyword_simple(message)
+            return {
+                "type": "place_search",
+                "keyword": keyword,
+                "count": extracted_count
+            }
+            
         except Exception as e:
             print(f"❌ 키워드 추출 오류: {e}")
             return {
-                "is_random_recommendation": False,
-                "keyword": message
+                "type": "place_search",
+                "keyword": message,
+                "count": None
             }
-    
+
     @staticmethod
     def _extract_keyword_simple(message: str) -> str:
         """
@@ -217,8 +684,7 @@ class ChatService:
         """
         remove_words = [
             'introduce', 'introduco', 'tell me about', 'what is', 'where is',
-            '소개', '알려줘', '알려', '정보', '설명', '어디', '뭐야', '무엇',
-            'about', 'the', 'a', 'an', 'me', '해줘', '해주세요'
+            'about', 'the', 'a', 'an', 'me'
         ]
         
         keyword = message.lower()
@@ -242,12 +708,12 @@ class ChatService:
             
             qdrant_client = ChatService._get_qdrant_client()
             
-            random_offset = random.randint(0, 100)
+            fetch_count = min(count * 5, 100)
             
             scroll_result = qdrant_client.scroll(
                 collection_name=ChatService.ATTRACTION_COLLECTION,
-                limit=count * 3,
-                offset=random_offset,
+                limit=fetch_count,
+                offset=random.randint(0, 50),
                 with_payload=True,
                 with_vectors=False
             )
@@ -305,31 +771,23 @@ class ChatService:
         
         return f"Yo! Hunters! 🔥💫 Lumi가 엄선한 {len(attractions)}개의 전설적인 장소들이야! 각 장소마다 특별한 빛의 에너지가 있으니까 직접 체크해봐! 궁금한 곳 있으면 말해줘! Let's explore! 🌙✨"
     
+    # ===== 개선된 검색 함수들 =====
+    
     @staticmethod
     def _search_best_festival(keyword: str) -> Dict[str, Any]:
         """
-        🎯 축제 벡터 검색 (최적화)
+        🎯 축제 벡터 검색 (개선된 버전)
         """
         try:
-            qdrant_client = ChatService._get_qdrant_client()
-            embedding_model = ChatService._get_embedding_model()
+            print(f"🎪 축제 검색: '{keyword}'")
             
-            query_embedding = embedding_model.embed_query(keyword)
+            # 개선된 검색 사용
+            result = ChatService._improved_search(keyword, search_type="festival")
             
-            search_results = qdrant_client.search(
-                collection_name=ChatService.COLLECTION_NAME,
-                query_vector=query_embedding,
-                limit=1,
-                score_threshold=0.3,
-                with_payload=True,
-                with_vectors=False
-            )
-            
-            if not search_results:
+            if not result:
                 print(f"🔍 축제 검색 결과 없음: '{keyword}'")
                 return None
             
-            result = search_results[0]
             festival_data = result.payload.get("metadata", {})
             
             formatted_data = {
@@ -358,43 +816,31 @@ class ChatService:
     @staticmethod
     def _search_best_attraction(keyword: str) -> Dict[str, Any]:
         """
-        🎯 관광명소 벡터 검색 (최적화)
-        ✅ hours_of_operation 에러 수정 (기본값 추가)
+        🎯 관광명소 벡터 검색 (개선된 버전)
         """
         try:
-            qdrant_client = ChatService._get_qdrant_client()
-            embedding_model = ChatService._get_embedding_model()
+            print(f"🏛️ 관광명소 검색: '{keyword}'")
             
-            query_embedding = embedding_model.embed_query(keyword)
+            # 개선된 검색 사용
+            result = ChatService._improved_search(keyword, search_type="attraction")
             
-            search_results = qdrant_client.search(
-                collection_name=ChatService.ATTRACTION_COLLECTION,
-                query_vector=query_embedding,
-                limit=1,
-                score_threshold=0.3,
-                with_payload=True,
-                with_vectors=False
-            )
-            
-            if not search_results:
+            if not result:
                 print(f"🔍 관광명소 검색 결과 없음: '{keyword}'")
                 return None
             
-            result = search_results[0]
             attraction_data = result.payload.get("metadata", {})
             
-            # ✅ 모든 필드에 기본값 추가 (None 에러 방지)
             formatted_data = {
                 "attr_id": attraction_data.get("attr_id", ""),
                 "title": attraction_data.get("title", ""),
                 "url": attraction_data.get("url", ""),
                 "description": attraction_data.get("description", ""),
                 "phone": attraction_data.get("phone", ""),
-                "hours_of_operation": attraction_data.get("hours_of_operation", "운영시간 정보 없음"),  # ✅ 기본값
+                "hours_of_operation": attraction_data.get("hours_of_operation", "운영시간 정보 없음"),
                 "holidays": attraction_data.get("holidays", ""),
                 "address": attraction_data.get("address", ""),
                 "transportation": attraction_data.get("transportation", ""),
-                "image_urls": attraction_data.get("image_urls", []),  # ✅ 빈 리스트
+                "image_urls": attraction_data.get("image_urls", []),
                 "image_count": attraction_data.get("image_count", 0),
                 "latitude": float(attraction_data.get("latitude", 0)),
                 "longitude": float(attraction_data.get("longitude", 0)),
@@ -453,9 +899,7 @@ class ChatService:
     @staticmethod
     def _generate_final_response(message: str, results_data: List[Dict], is_kpop_mode: bool = False) -> str:
         """
-        🎤 Lumi 컨셉 완전히 유지 (밸런스 조정)
-        - K-pop 모드: 항상 GPT 사용 (매력적인 긴 응답)
-        - 일반 모드: 템플릿 사용 (빠른 응답)
+        🎤 Lumi 컨셉 완전히 유지
         """
         try:
             if not results_data:
@@ -467,12 +911,9 @@ class ChatService:
             result = results_data[0]
             result_type = result.get('type', 'festival')
             
-            # 🎤 K-pop 모드: 항상 GPT 사용 (Lumi의 매력적인 스토리텔링)
             if is_kpop_mode:
                 print("🎤 Lumi GPT 응답 (매력 유지)")
                 return ChatService._kpop_gpt_response(message, result, result_type)
-            
-            # 📚 일반 모드: 템플릿 사용 (빠른 응답)
             else:
                 print("📚 일반 템플릿 응답 (GPT 생략)")
                 return ChatService._general_template_response(result, result_type)
@@ -488,110 +929,28 @@ class ChatService:
                 return "안녕하세요! 궁금한 것이 있으시면 언제든 물어보세요! 😊"
     
     @staticmethod
-    def _kpop_template_response(result: Dict, result_type: str) -> str:
+    def _kpop_gpt_response(message: str, result: Dict, result_type: str) -> str:
         """
-        🎤 Lumi 스타일 템플릿 응답 (GPT 없이 즉시 반환)
-        - Demon Hunters 로어 자동 매칭
-        - 장소별 스토리 삽입
+        🎤 Lumi 스타일 GPT 응답
         """
         title = result.get('title', '')
         description = result.get('description', '')
-        
-        # 🎭 Demon Hunters 장소 로어 (MV, 공연, 멤버 스토리)
-        location_lore = {
-            '남산': "우리의 궁극적인 감시탑! 🌙✨ 'Light in Darkness' MV 파이널 배틀 촬영지야! 서울 전체를 내려다보며 도시의 빛 에너지와 가장 강하게 연결되는 곳이지 💫⚔️",
-            '타워': "우리의 궁극적인 감시탑! 🌙✨ 'Light in Darkness' MV 파이널 배틀 촬영지야!",
-            '홍대': "Yo! 우리의 시작점! 🔥 Shadow랑 내가 데뷔 전에 버스킹하던 전설의 땅! 모든 스트릿 퍼포머들이 긍정 에너지를 퍼뜨리는 우리의 훈련장이자 사냥터야! 🎤⚔️",
-            '강남': "'Neon Demons' 안무 영상 촬영 장소! 💫 탐욕으로 위장한 악마들이 숨어있는 화려한 구역이지 ⚔️",
-            '북촌': "한국 전통 빛의 전사들에 대해 배운 고대 영적 땅! 🌙 전통 의상 컨셉에 영감을 준 곳이야 ✨",
-            '한옥': "한국 전통 빛의 전사들에 대해 배운 고대 영적 땅! 🌙",
-            '한강': "'Moonlight Hunter' 퍼포먼스 촬영지! 🌙 빛과 어둠을 가르는 정화의 강! 밤에 도시 불빛이 물에 반사되는 모습... 수천 명의 빛의 전사들이 우리와 함께 서있는 것 같아 ⚔️✨",
-            '명동': "'Crystal Light' MV 촬영한 쇼핑 지구! ✨ 긍정적인 소비 에너지로 보호받는 곳이지!",
-            '이태원': "다양한 빛 에너지가 융합하는 다문화 구역! 💫 국제 팬들이 가장 좋아하는 만남의 장소야!",
-            '동대문': "기술과 마법이 만나는 미래형 전장! 🔥 우리 홀로그램 콘서트 장소지!",
-            '경복궁': "고대 빛의 전사들이 왕국을 지킨 왕궁! 👑 우리 전통 의상 컨셉에 영감을 줬어 ⚔️",
-            '궁': "고대 빛의 전사들이 왕국을 지킨 왕궁! 👑",
-            '인사동': "예술적 에너지가 보호 장벽을 만드는 문화 거리! 🎨 내가 가사 영감을 얻는 곳이야 ✨",
-            '롯데월드': "기쁨이 어둠을 물리치는 엔터테인먼트 영역! 🎢 깜짝 플래시몹 공연했던 곳! 🔥",
-            '코엑스': "숨겨진 빛의 수정이 있다고 전해지는 지하 도시! 💎 우리 팬미팅 비밀 장소야 ✨",
-            '서울숲': "나무 사이로 스며드는 빛이 영혼을 치유하는 자연 성소! 🌳 'Forest of Dreams' 뮤직비디오 촬영지 💫",
-            '청계천': "어둠에서 부활한 서울을 상징하는 복원된 물길! 🌊 우리 발라드 MV의 로맨틱 스팟 💕",
-        }
-        
-        # 장소명에서 키워드 찾기
-        lore = ""
-        for place, story in location_lore.items():
-            if place in title:
-                lore = f"\n\n{story}"
-                break
-        
-        if result_type == 'festival':
-            start_date = result.get('start_date', '')
-            end_date = result.get('end_date', '')
-            
-            response = f"✨ Oh! '{title}'! Legendary 축제 발견! 💫\n\n"
-            response += f"📅 {start_date} ~ {end_date}\n"
-            
-            if description:
-                # description 요약 (처음 200자)
-                desc_short = description[:200] + "..." if len(description) > 200 else description
-                response += f"\n{desc_short}\n"
-            
-            # 로어가 있으면 추가, 없으면 기본 멘트
-            if lore:
-                response += lore
-            else:
-                response += "\n이 축제, 엄청 Dope할 것 같은데? 🔥 우리의 새로운 미션 장소가 될 수도!"
-            
-            response += "\n\n아래 카드에서 Details 체크해봐, Hunters! Let's go! ⚔️✨"
-        
-        else:  # attraction
-            address = result.get('address', '')
-            hours = result.get('hours_of_operation', '')
-            
-            response = f"🔥 Yo! '{title}'! 우리의 미션 장소! 💫\n\n"
-            
-            if address:
-                response += f"📍 {address}\n"
-            if hours and hours != "운영시간 정보 없음":
-                response += f"⏰ {hours}\n"
-            
-            if description:
-                desc_short = description[:200] + "..." if len(description) > 200 else description
-                response += f"\n{desc_short}\n"
-            
-            # 로어가 있으면 추가, 없으면 기본 멘트
-            if lore:
-                response += lore
-            else:
-                response += "\n이곳 꼭 가봐야 해, Hunters! Legendary spot! 🌙 특별한 빛 에너지가 느껴질 거야!"
-            
-            response += "\n\nMore info 아래 카드에서! ✨⚔️"
-        
-        return response
-    
-    @staticmethod
-    def _kpop_gpt_response(message: str, result: Dict, result_type: str) -> str:
-        """
-        🎤 Lumi 스타일 GPT 응답 (매력적인 긴 응답)
-        - description 전체 사용
-        - 4-6문장 길이 권장
-        """
-        title = result.get('title', '')
-        description = result.get('description', '')  # 🎤 전체 사용!
         
         if result_type == 'festival':
             prompt = KPOP_FESTIVAL_QUICK_PROMPT.format(
                 title=title,
                 start_date=result.get('start_date', ''),
                 end_date=result.get('end_date', ''),
-                description=description[:500]  # ✅ 500자로 제한
+                description=description[:500],
+                message=message
             )
         else:
             prompt = KPOP_ATTRACTION_QUICK_PROMPT.format(
                 title=title,
                 address=result.get('address', ''),
-                description=description[:500]  # ✅ 500자로 제한
+                hours_of_operation=result.get('hours_of_operation', ''),
+                description=description[:500],
+                message=message
             )
         
         response_messages = [{"role": "user", "content": prompt}]
@@ -601,7 +960,7 @@ class ChatService:
     @staticmethod
     def _general_template_response(result: Dict, result_type: str) -> str:
         """
-        📚 일반 모드 템플릿 응답 (GPT 없이)
+        📚 일반 모드 템플릿 응답
         """
         title = result.get('title', '')
         description = result.get('description', '')
@@ -619,7 +978,7 @@ class ChatService:
             
             response += "자세한 정보는 아래 카드에서 확인해주세요! 😊"
         
-        else:  # attraction
+        else:
             address = result.get('address', '')
             hours = result.get('hours_of_operation', '')
             

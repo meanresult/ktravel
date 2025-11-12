@@ -121,8 +121,8 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
                     if (onDayTitleChange) onDayTitleChange(data[0].day_title);
                 }
             })
-            .catch(err => console.error(err.message));
-    }, [token, fetchWithAuth, onDayTitleChange]);
+            .catch(err => console.error("❌ day_titles fetch 실패:", err.message));
+    }, [token, fetchWithAuth, selectedDayTitle, onDayTitleChange]);
 
     useEffect(() => {
         if (!scheduleId || !token) return;
@@ -130,12 +130,13 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
         fetchWithAuth(`http://localhost:8000/api/schedules/${scheduleId}`)
             .then(res => res.json())
             .then(data => {
-                setSelectedDayTitle(data.day_title || '');
-                onDayTitleChange(data.day_title);
+                const dayTitle = data.day_title || '';
+                setSelectedDayTitle(dayTitle);
+                if (onDayTitleChange) onDayTitleChange(dayTitle);
                 setDescription(data.description || '');
             })
-            .catch(console.error);
-    }, [scheduleId, token]);
+            .catch(err => console.error("❌ Schedule fetch 실패:", err.message));
+    }, [scheduleId, token, fetchWithAuth, onDayTitleChange]);
 
     useEffect(() => {
         if (!selectedDayTitle || !token) return;
@@ -146,10 +147,27 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
             .then(data => {
                 setDescription(data.description || '');
             })
-            .catch(console.error);
-    }, [selectedDayTitle, token]);
+            .catch(err => console.error("❌ description fetch 실패:", err.message));
+    }, [selectedDayTitle, token, fetchWithAuth]);
 
-    const handleSave = () => {};
+    // ✅ description 저장 핸들러 (중복 제거 및 통합)
+    const handleSave = () => {
+        if (!selectedDayTitle || !token) return;
+
+        fetchWithAuth(
+            `http://localhost:8000/api/schedules/update_description?day_title=${encodeURIComponent(selectedDayTitle)}&description=${encodeURIComponent(description)}`,
+            { method: "PUT" }
+        )
+            .then(res => res.json())
+            .then((data) => {
+                console.log("✅ 저장 성공:", data);
+                alert('Description이 저장되었습니다! ✅');
+            })
+            .catch(err => {
+                console.error("❌ 저장 실패", err.message);
+                alert(`저장 실패: ${err.message}`);
+            });
+    };
 
     const handleDayTitleChange = (e) => {
         setSelectedDayTitle(e.target.value);
@@ -260,6 +278,13 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
                 )}
             </header>
 
+            {authError && (
+                <div className="kschedule-error-message">
+                    <p>🛑 **에러:** {authError}</p>
+                    {authError.includes('로그인') && <p>잠시 후 메인 페이지로 이동합니다...</p>}
+                </div>
+            )}
+
             {!authError && (
                 <>
                     <div className="kschedule-details">
@@ -269,6 +294,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
                             value={selectedDayTitle}
                             onChange={handleDayTitleChange}
                         >
+                            {dayTitles.length === 0 && <option value="">No Schedule!</option>}
                             {dayTitles.map(day => (
                                 <option key={day} value={day}>
                                     {day}
@@ -313,7 +339,6 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
                     <div className="kschedule-table-wrapper">
                         <DragDropContext onDragEnd={onDragEnd}>
                             <table className="kschedule-table">
-                                {/* ✅ 열 노래 드래그 제거됨! */}
                                 <thead>
                                     <tr>
                                         <th>No.</th>
