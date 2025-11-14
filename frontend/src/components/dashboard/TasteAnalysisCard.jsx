@@ -10,14 +10,14 @@ const TasteAnalysisCard = ({ tasteAnalysis }) => {
   let cumulativePercentage = 0;
 
   return (
-    <div className="taste-card">
-      <h3 className="taste-header">
+    <div className="dashboard-taste-card">
+      <h3 className="dashboard-taste-header">
         <TrendingUp size={18} color="#3853FF" />
         취향 분석
       </h3>
 
-      <div className="chart-container">
-        <svg className="donut-chart" viewBox="0 0 140 140">
+      <div className="dashboard-chart-container">
+        <svg className="dashboard-donut-chart" viewBox="0 0 140 140">
           <g transform="translate(70, 70)">
             {tasteAnalysis.categories.map((category, index) => {
               const percentage = (category.value / total) * 100;
@@ -50,11 +50,11 @@ const TasteAnalysisCard = ({ tasteAnalysis }) => {
         </svg>
       </div>
 
-      <div className="chart-legend">
+      <div className="dashboard-chart-legend">
         {tasteAnalysis.categories.map((cat, idx) => (
-          <div key={idx} className="legend-item">
+          <div key={idx} className="dashboard-legend-item">
             <div
-              className="legend-dot"
+              className="dashboard-legend-dot"
               style={{ background: cat.color }}
             ></div>
             <span>
@@ -64,29 +64,29 @@ const TasteAnalysisCard = ({ tasteAnalysis }) => {
         ))}
       </div>
 
-      <div className="taste-section">
-        <div className="taste-label">주요 분위기 태그 TOP 5</div>
-        <div className="taste-tags">
+      <div className="dashboard-taste-section">
+        <div className="dashboard-taste-label">주요 분위기 태그 TOP 5</div>
+        <div className="dashboard-taste-tags">
           {tasteAnalysis.topTags.map((tag, idx) => (
-            <span key={idx} className="taste-tag">
+            <span key={idx} className="dashboard-taste-tag">
               #{tag}
             </span>
           ))}
         </div>
       </div>
 
-      <div className="taste-section">
-        <div className="taste-label">자주 방문한 지역</div>
-        <div className="taste-tags">
+      <div className="dashboard-taste-section">
+        <div className="dashboard-taste-label">자주 방문한 지역</div>
+        <div className="dashboard-taste-tags">
           {tasteAnalysis.topLocations.map((loc, idx) => (
-            <span key={idx} className="taste-tag">
+            <span key={idx} className="dashboard-taste-tag">
               📍 {loc}
             </span>
           ))}
         </div>
       </div>
 
-      <div className="taste-analysis">{tasteAnalysis.analysis}</div>
+      <div className="dashboard-taste-analysis">{tasteAnalysis.analysis}</div>
     </div>
   );
 };

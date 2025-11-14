@@ -401,7 +401,7 @@ const UserDashboard = () => {
       </div>
 
       {/* 상단: 추천 슬라이더 + 취향 분석 */}
-      <div className="top-section">
+      <div className="dashboard-top-section">
         <RecommendedSlider
           items={sliderItems}
           currentSlide={currentSlide}

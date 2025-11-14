@@ -18,7 +18,7 @@ const BookmarkGrid = ({
   return (
     <div className="bookmark-main">
       <div className="bookmark-header">
-        <h2 className="section-title">
+        <h2 className="dashboard-section-title">
           <Heart size={20} color="#FF6B6B" />
           내 북마크
         </h2>
