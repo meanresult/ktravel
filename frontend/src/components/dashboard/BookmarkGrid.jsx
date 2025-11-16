@@ -16,20 +16,23 @@ const BookmarkGrid = ({
   setHoveredCard,
 }) => {
   return (
-    <div className="bookmark-main">
-      <div className="bookmark-header">
+    <div className="dashboard-bookmark-main">
+      {/* 헤더: 제목 + 필터/정렬 */}
+      <div className="dashboard-bookmark-header">
         <h2 className="dashboard-section-title">
           <Heart size={20} color="#FF6B6B" />
           내 북마크
         </h2>
-        <div className="bookmark-controls">
-          <div className="filter-group">
-            <span className="control-label">
+        
+        <div className="dashboard-bookmark-controls">
+          {/* 필터 */}
+          <div className="dashboard-filter-group">
+            <span className="dashboard-control-label">
               <Filter size={14} />
               필터
             </span>
             <select
-              className="control-select"
+              className="dashboard-control-select"
               value={bookmarkFilter}
               onChange={(e) => onChangeFilter(e.target.value)}
             >
@@ -40,13 +43,15 @@ const BookmarkGrid = ({
               <option value="페스티벌">페스티벌</option>
             </select>
           </div>
-          <div className="sort-group">
-            <span className="control-label">
+
+          {/* 정렬 */}
+          <div className="dashboard-sort-group">
+            <span className="dashboard-control-label">
               <SortAsc size={14} />
               정렬
             </span>
             <select
-              className="control-select"
+              className="dashboard-control-select"
               value={sortOption}
               onChange={(e) => onChangeSort(e.target.value)}
             >
@@ -58,48 +63,62 @@ const BookmarkGrid = ({
         </div>
       </div>
 
-      <div className="bookmark-grid">
-        {isLoadingBookmarks ? (
-          <div className="bookmark-loading">
-            <Loader2 size={32} className="animate-spin" />
-            <span style={{ marginLeft: '12px' }}>
-              북마크를 불러오는 중...
-            </span>
+      {/* 북마크 그리드 */}
+      <div className="dashboard-bookmark-grid">
+        {/* 로딩 상태 */}
+        {isLoadingBookmarks && (
+          <div className="dashboard-bookmark-loading">
+            <Loader2 size={32} className="dashboard-animate-spin" />
+            <span style={{ marginLeft: '12px' }}>북마크를 불러오는 중...</span>
           </div>
-        ) : bookmarkError && sortedBookmarks.length === 0 ? (
-          <div className="bookmark-error">
-            <div className="bookmark-error-title">
-              ⚠️ 북마크 API 연결 실패
+        )}
+
+        {/* 에러 상태 */}
+        {!isLoadingBookmarks && bookmarkError && sortedBookmarks.length === 0 && (
+          <div className="dashboard-bookmark-error">
+            <div className="dashboard-bookmark-error-title">
+              ⚠️ 북마크 조회 실패
             </div>
-            <div className="bookmark-error-desc">{bookmarkError}</div>
-            <button className="retry-button" onClick={onRetry}>
+            <div className="dashboard-bookmark-error-desc">
+              {bookmarkError}
+            </div>
+            <button className="dashboard-retry-button" onClick={onRetry}>
               다시 시도
             </button>
           </div>
-        ) : sortedBookmarks.length === 0 ? (
-          <div className="bookmark-empty">
-            <div className="bookmark-empty-icon">❤️</div>
-            <div className="bookmark-empty-title">
+        )}
+
+        {/* 빈 상태 */}
+        {!isLoadingBookmarks && !bookmarkError && sortedBookmarks.length === 0 && (
+          <div className="dashboard-bookmark-empty">
+            <div className="dashboard-bookmark-empty-icon">❤️</div>
+            <div className="dashboard-bookmark-empty-title">
               {bookmarkFilter !== '전체'
                 ? `"${bookmarkFilter}" 카테고리에 북마크가 없습니다`
                 : '아직 북마크가 없습니다'}
             </div>
-            <div className="bookmark-empty-desc">
+            <div className="dashboard-bookmark-empty-desc">
               마음에 드는 콘텐츠를 저장해보세요
             </div>
           </div>
-        ) : (
+        )}
+
+        {/* 북마크 카드 리스트 */}
+        {!isLoadingBookmarks &&
           sortedBookmarks.map((item) => (
             <div
               key={item.id}
-              className="bookmark-card"
+              className="dashboard-bookmark-card"
               onMouseEnter={() => setHoveredCard(item.id)}
               onMouseLeave={() => setHoveredCard(null)}
             >
-              <div className="bookmark-image">
+              {/* 이미지 영역 */}
+              <div className="dashboard-bookmark-image">
                 <img src={item.image} alt={item.title} />
+                
+                {/* 하트 버튼 */}
                 <div
-                  className="bookmark-heart"
+                  className="dashboard-bookmark-heart"
                   onClick={() => onToggleBookmark(item.id)}
                 >
                   <Heart
@@ -108,26 +127,32 @@ const BookmarkGrid = ({
                     color="#FF6B6B"
                   />
                 </div>
+
+                {/* 호버 시 출연진 표시 */}
                 {hoveredCard === item.id && item.actors && (
-                  <div className="bookmark-hover">
+                  <div className="dashboard-bookmark-hover">
                     출연: {item.actors.join(', ')}
                   </div>
                 )}
               </div>
-              <div className="bookmark-content">
-                <div className="bookmark-title">{item.title}</div>
-                <span className="bookmark-category">{item.category}</span>
-                <div className="recent-tags">
-                  {item.tags.map((tag, idx) => (
-                    <span key={idx} className="tag">
-                      #{tag}
-                    </span>
-                  ))}
+
+              {/* 카드 내용 */}
+              <div className="dashboard-bookmark-content">
+                <div className="dashboard-bookmark-title">{item.title}</div>
+                <span className="dashboard-bookmark-category">
+                  {item.category}
+                </span>
+                <div className="dashboard-recent-tags">
+                  {item.tags &&
+                    item.tags.map((tag, idx) => (
+                      <span key={idx} className="dashboard-tag">
+                        #{tag}
+                      </span>
+                    ))}
                 </div>
               </div>
             </div>
-          ))
-        )}
+          ))}
       </div>
     </div>
   );
