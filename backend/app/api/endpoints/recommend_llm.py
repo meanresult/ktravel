@@ -202,6 +202,24 @@ def get_llm_enhanced_recommendations(
         collection_name = PLACE_TYPE_COLLECTION_MAP.get(bm.place_type)
         if not collection_name:
             continue
+            
+          
+        try:
+          
+            # 2. 실제 포인트 몇 개 가져와서 ID 형식 확인
+            points = client.scroll(collection_name=collection_name, limit=3)
+            print(f"🔍 실제 포인트 ID들: {[p.id for p in points[0]]}")
+            print(f"🔍 북마크 reference_id: {bm.reference_id} (타입: {type(bm.reference_id)})")
+            
+            # 3. 기존 recommend 코드
+            results = client.recommend(
+                collection_name=collection_name,
+                positive=[bm.reference_id],
+                limit=req.top_k_per_bookmark,
+            )
+        except Exception as e:
+            print(f"Qdrant 추천 실패: {e}")
+            continue
         
         try:
             results = client.recommend(

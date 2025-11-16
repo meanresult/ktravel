@@ -10,8 +10,9 @@ import { addBookmark, deleteBookmark, PlaceType } from '../services/bookmarkServ
 
 const ITEMS_PER_PAGE = 9;
 const MAX_BUTTONS = 5;
-const API_BASE = 'http://localhost:8000/api';
 const PLACE_TYPE_KMEDIA = 3;
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 
 const getImageList = (urlList) => urlList;
 
@@ -55,7 +56,7 @@ function KMediaPage() {
         try {
             const token = localStorage.getItem('session_id');
             const response = await fetch(
-                `${API_BASE}/bookmark/${userId}`,
+                `${API_URL}/bookmark/${userId}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -107,7 +108,7 @@ function KMediaPage() {
                 }
                 
                 // 사용자 정보 API 호출
-                const response = await fetch('http://localhost:8000/api/auth/me', {
+                const response = await fetch(`${API_URL}/api/auth/me`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }

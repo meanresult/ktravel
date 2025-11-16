@@ -7,6 +7,8 @@ import PlaceholderMarker from '../../assets/concert_marker.png';
 
 const NAVER_MAPS_CLIENT_ID = process.env.REACT_APP_NAVER_MAPS_CLIENT_ID;
 const NAVER_MAPS_URL = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${NAVER_MAPS_CLIENT_ID}`;
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 
 // ✅ ScheduleTable과 동일한 인증 함수
 const globalFetchWithAuth = async (url, options = {}, token, setToken, setAuthError) => {
@@ -106,7 +108,7 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
     const loadNearbyRestaurants = useCallback(async (map) => {
         if (!itemLocation || !map) return;
 
-        const url = `http://localhost:8000/restaurants/nearby?lat=${itemLocation.lat}&lng=${itemLocation.lng}&radius=500`;
+        const url = `${API_URL}/restaurants/nearby?lat=${itemLocation.lat}&lng=${itemLocation.lng}&radius=500`;
 
         try {
             const response = await fetch(url);
@@ -186,7 +188,7 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
         }
         
         try {
-            const response = await fetchWithAuth('http://localhost:8000/api/schedules/day_titles');
+            const response = await fetchWithAuth(`${API_URL}/api/schedules/day_titles`);
             const data = await response.json();
             
             console.log('✅ 일정 목록 조회 성공:', data);
@@ -280,7 +282,7 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
             });
             
             // 🎯 실제 API 호출!
-            const response = await fetchWithAuth('http://localhost:8000/api/destinations/add', {
+            const response = await fetchWithAuth(`${API_URL}/api/destinations/add`, {
                 method: 'POST',
                 body: JSON.stringify(requestData)
             });

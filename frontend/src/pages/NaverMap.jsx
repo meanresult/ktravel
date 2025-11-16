@@ -4,6 +4,9 @@ import React, { useEffect, useRef, useState } from 'react';
 const NAVER_MAPS_CLIENT_ID = process.env.REACT_APP_NAVER_MAPS_CLIENT_ID;
 const NAVER_MAPS_URL = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${NAVER_MAPS_CLIENT_ID}&language=en&submodules=geocoder`;
 
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 const NaverMap = () => {
     const mapElement = useRef(null);
     const mapLoaded = useRef(false);
@@ -126,7 +129,7 @@ const NaverMap = () => {
                 longitude: parseFloat(markerData.longitude)
             };
 
-            const response = await fetch('http://localhost:8000/api/destinations/add', {
+            const response = await fetch(`${API_URL}/api/destinations/add`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

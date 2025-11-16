@@ -2,8 +2,8 @@
  * 📡 bookmarkService.js
  * 백엔드 북마크 API와 통신하는 서비스 레이어
  */
-
-const API_BASE = 'http://localhost:8000/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE = `${API_URL}/api`;
 
 // ✅ place_type 상수 정의
 export const PlaceType = {

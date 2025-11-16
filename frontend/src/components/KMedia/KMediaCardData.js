@@ -1,7 +1,7 @@
 // KMediaCardData.js
 // FastAPI와 직접 연결, 이미지 프록시 없이 원본 URL 사용
 
-const BASE_URL = "http://localhost:8000/api";
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 /**
  * 공통 fetch 함수
@@ -47,7 +47,7 @@ function shuffleArray(array) {
  * @returns {Promise<any[]>}
  */
 export async function fetchKContentList(skip = 0, limit = 100) {
-  const url = `${BASE_URL}/kcontents?skip=${skip}&limit=${limit}`;
+  const url = `${API_URL}/api/kcontents?skip=${skip}&limit=${limit}`;
   return fetchData(url);
 }
 
@@ -57,7 +57,7 @@ export async function fetchKContentList(skip = 0, limit = 100) {
  * @returns {Promise<any>}
  */
 export async function fetchKContentDetail(contentId) {
-  const url = `${BASE_URL}/kcontents/${contentId}`;
+  const url = `${API_URL}/api/kcontents/${contentId}`;
   return fetchData(url);
 }
 
@@ -71,7 +71,7 @@ export async function fetchKContentSearch(query) {
     console.warn("검색어는 2글자 이상이어야 합니다.");
     return [];
   }
-  const url = `${BASE_URL}/kcontents/search/query?q=${encodeURIComponent(query)}`;
+  const url = `${API_URL}/api/kcontents/search/query?q=${encodeURIComponent(query)}`;
   return fetchData(url);
 }
 
@@ -82,7 +82,7 @@ export async function fetchKContentSearch(query) {
  */
 export async function fetchKContentByCategory(category) {
   if (!category) return [];
-  const url = `${BASE_URL}/kcontents/search/category?category=${encodeURIComponent(category)}`;
+  const url = `${API_URL}/api/kcontents/search/category?category=${encodeURIComponent(category)}`;
   return fetchData(url);
 }
 

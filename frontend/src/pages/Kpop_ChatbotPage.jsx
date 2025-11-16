@@ -6,6 +6,8 @@ import {
     Search,
 } from '@mui/icons-material';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 function Kpop_ChatbotPage() {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
@@ -105,7 +107,7 @@ function Kpop_ChatbotPage() {
                 throw new Error('인증 토큰이 없습니다. 로그인이 필요합니다.');
             }
             
-            const response = await fetch('http://localhost:8000/api/chat/kcontents/send/stream', {
+            const response = await fetch(`${API_URL}/api/chat/kcontents/send/stream`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

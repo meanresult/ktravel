@@ -2,8 +2,12 @@
 
 from qdrant_client import QdrantClient
 from typing import Optional
+
+from dotenv import load_dotenv
 import os
 
+# .env 파일 로드
+load_dotenv()
 
 try:
     # 이미 프로젝트에서 쓰고 있는 settings (app.core.config.settings) 우선 사용
@@ -33,9 +37,12 @@ def get_qdrant_client() -> QdrantClient:
     """
 
     # 예: https://xxxxxx.us-west-2-0.aws.cloud.qdrant.io:6333
-    qdrant_url = _get_env("QDRANT_HOST")
+    qdrant_url = _get_env("QDRANT_URL")
     qdrant_api_key = _get_env("QDRANT_API_KEY")
 
+    #qdrant_url = "https://ed69909d-cb9d-429b-91d2-ba4561747dd5.us-west-2-0.aws.cloud.qdrant.io:6333"
+    #qdrant_api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0._7IYlBzsLmAtoemGjCowUfrUd5rM-3vIxyyJCteGm-Y"
+    
     if not qdrant_url:
         raise RuntimeError(
             "QDRANT_URL이 설정되지 않았습니다. .env 또는 환경변수에 QDRANT_URL을 추가해주세요."

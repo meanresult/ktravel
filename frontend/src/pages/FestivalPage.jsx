@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/FestivalPage.css';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 function FestivalPage() {
     const [festivals, setFestivals] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -12,7 +14,7 @@ function FestivalPage() {
     const fetchFestivals = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:8000/api/festivals/', {
+            const response = await fetch(`${API_URL}/api/festivals/`, {
                 credentials: 'include'
             });
 

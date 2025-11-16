@@ -2,6 +2,8 @@ import React from 'react';
 import KDH_ChatbotPage from './KDH_ChatbotPage';  // ← 같은 폴더
 import NaverMap from './NaverMap'; 
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 function KDH_ChatbotMapLayout() {
     return (
         <div style={styles.layoutContainer}>

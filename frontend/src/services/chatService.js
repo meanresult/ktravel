@@ -1,5 +1,8 @@
 import api from './api';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+
 const chatService = {
   // 기존: 일반 메시지 전송
   sendMessage: async (message) => {
@@ -26,7 +29,7 @@ const chatService = {
       // ⚠️ axios 대신 fetch 사용 (Streaming 지원)
       const token = localStorage.getItem('token');
       
-      const response = await fetch('http://localhost:8000/api/chat/send/stream', {
+      const response = await fetch(`${API_URL}/api/chat/send/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

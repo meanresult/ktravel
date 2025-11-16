@@ -3,6 +3,8 @@ import { Trash2 } from 'lucide-react';
 import '../styles/ScheduleTable.css';
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 const globalFetchWithAuth = async (url, options = {}, token, setToken, setAuthError) => {
     setAuthError(null);
     if (!token) {
@@ -71,7 +73,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
 
         try {
             const response = await fetchWithAuth(
-                `http://localhost:8000/api/destinations/schedule-table-data?day_title=${encodeURIComponent(selectedDayTitle)}`
+                `${API_URL}/api/destinations/schedule-table-data?day_title=${encodeURIComponent(selectedDayTitle)}`
             );
             const data = await response.json();
             
@@ -123,7 +125,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
 
     useEffect(() => {
         if (!token) return;
-        fetchWithAuth('http://localhost:8000/api/schedules/day_titles')
+        fetchWithAuth(`${API_URL}/api/schedules/day_titles`)
             .then(res => res.json())
             .then(data => {
                 setDayTitles(data.map(d => d.day_title));
@@ -138,7 +140,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
     useEffect(() => {
         if (!scheduleId || !token) return;
 
-        fetchWithAuth(`http://localhost:8000/api/schedules/${scheduleId}`)
+        fetchWithAuth(`${API_URL}/api/schedules/${scheduleId}`)
             .then(res => res.json())
             .then(data => {
                 const dayTitle = data.day_title || '';
@@ -152,7 +154,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
     useEffect(() => {
         if (!selectedDayTitle || !token) return;
         fetchWithAuth(
-            `http://localhost:8000/api/schedules/description?day_title=${encodeURIComponent(selectedDayTitle)}`
+            `${API_URL}/api/schedules/description?day_title=${encodeURIComponent(selectedDayTitle)}`
         )
             .then(res => res.json())
             .then(data => {
@@ -165,7 +167,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
         if (!selectedDayTitle || !token) return;
 
         fetchWithAuth(
-            `http://localhost:8000/api/schedules/update_description?day_title=${encodeURIComponent(selectedDayTitle)}&description=${encodeURIComponent(description)}`,
+            `${API_URL}/api/schedules/update_description?day_title=${encodeURIComponent(selectedDayTitle)}&description=${encodeURIComponent(description)}`,
             { method: "PUT" }
         )
             .then(res => res.json())
@@ -211,7 +213,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
             });
 
             const response = await fetchWithAuth(
-                'http://localhost:8000/api/destinations/update-schedule-data',
+                `${API_URL}/api/destinations/update-schedule-data`,
                 {
                     method: 'PUT',
                     body: JSON.stringify({

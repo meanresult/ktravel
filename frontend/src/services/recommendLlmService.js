@@ -1,5 +1,7 @@
 // frontend/src/services/recommendLlmService.js
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 export async function getLlmEnhancedRecommendations({
   userId,
   placeType = null,
@@ -25,7 +27,7 @@ export async function getLlmEnhancedRecommendations({
     const token = localStorage.getItem('session_id');
     
     const response = await fetch(
-      `http://localhost:8000/api/recommend-llm/enhanced?use_llm=${useLlm}`,
+      `${API_URL}/api/recommend-llm/enhanced?use_llm=${useLlm}`,
       {
         method: 'POST',
         headers: {

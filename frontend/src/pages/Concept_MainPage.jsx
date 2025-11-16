@@ -6,6 +6,7 @@ import '../styles/Concept_MainPage.css'; // 외부 CSS 파일만 import
 import { AiFillMessage } from 'react-icons/ai';
 import Sidebar from '../components/Sidebar';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 const ConceptCard = ({ title, subTitle, icon: Icon, colorClass, destination,children }) => (
     <Link 
@@ -51,7 +52,7 @@ const ConceptMainPage = () => {
                 return;
             }
 
-            const response = await fetch('http://localhost:8000/api/auth/me', {
+            const response = await fetch(`${API_URL}/api/auth/me`, {
                 headers: {
                     'Authorization': `Bearer ${sessionId}`
                 }
@@ -85,7 +86,7 @@ const ConceptMainPage = () => {
         setLoading(true);
 
         try {
-            const response = await fetch('http://localhost:8000/api/auth/login', {
+            const response = await fetch(`${API_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -129,7 +130,7 @@ const ConceptMainPage = () => {
             const sessionId = localStorage.getItem('session_id');
             
             if (sessionId) {
-                await fetch('http://localhost:8000/api/auth/logout', {
+                await fetch(`${API_URL}/api/auth/logout`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${sessionId}`

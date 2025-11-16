@@ -9,9 +9,10 @@ import  useMapLogic from '../components/kpathidea/useMapLogic';
 import MemoModal from '../components/kpathidea/MemoModal'; 
 
 // API 및 환경 변수 설정
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 const NAVER_MAPS_CLIENT_ID = process.env.REACT_APP_NAVER_MAPS_CLIENT_ID;
-const LOCATION_API_URL = "http://127.0.0.1:8000/search/location";
-const ROUTE_API_URL = "http://127.0.0.1:8000/api/search/route";
+const LOCATION_API_URL = `${API_URL}/search/location`;
+const ROUTE_API_URL = `${API_URL}/api/search/route`;
 const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_API_KEY;
 
 // ⭐ scheduleLocations prop 추가

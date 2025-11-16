@@ -6,6 +6,8 @@ import 'react-calendar/dist/Calendar.css';
 import '../styles/ConcertPage.css';
 import MapModal from '../components/location_modal/MapModal';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 const MAX_BUTTONS = 6;
 
 const formatDate = (date) => {
@@ -207,7 +209,7 @@ const ConcertPage = ({ isEmbedded }) => {
         }
         
         try {
-            const response = await fetchWithAuth('http://localhost:8000/api/schedules/day_titles');
+            const response = await fetchWithAuth(`${API_URL}/api/schedules/day_titles`);
             const data = await response.json();
             
             console.log('✅ 일정 목록 조회 성공:', data);
@@ -279,7 +281,7 @@ const ConcertPage = ({ isEmbedded }) => {
             });
             
             // 🎯 실제 API 호출!
-            const response = await fetchWithAuth('http://localhost:8000/api/destinations/add', {
+            const response = await fetchWithAuth(`${API_URL}/api/destinations/add`, {
                 method: 'POST',
                 body: JSON.stringify(requestData)
             });

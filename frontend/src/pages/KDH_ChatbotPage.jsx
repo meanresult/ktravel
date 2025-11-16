@@ -3,6 +3,9 @@ import '../styles/KDH_ChatbotPage.css';
 import ChatMessage from '../components/chat/ChatMessage';
 import ChatInput from '../components/chat/ChatInput';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+
 function KDH_ChatbotPage() {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -113,7 +116,7 @@ function KDH_ChatbotPage() {
             }
 
             // 3. 🌊 Streaming 요청!
-            const response = await fetch('http://localhost:8000/api/chat/send/stream', {
+            const response = await fetch(`${API_URL}/api/chat/send/stream`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -3,6 +3,8 @@ import KPathIdeaPage from './KPathIdeaPage.jsx';
 import ScheduleTable from './ScheduleTable.jsx'; 
 import '../styles/KPathIntegrationPage.css';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 /**
  * 지도와 일정 테이블을 통합하고 중앙 상태를 관리하는 메인 페이지 컴포넌트
  */
@@ -51,7 +53,7 @@ useEffect(() => {
             console.log(`🔍 "${selectedDayTitle}" 일정의 목적지 조회 시작`);
             
             const response = await fetch(
-                `http://localhost:8000/api/destinations/by-schedule?day_title=${encodeURIComponent(selectedDayTitle)}`,
+                `${API_URL}/api/destinations/by-schedule?day_title=${encodeURIComponent(selectedDayTitle)}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`,
