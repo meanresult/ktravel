@@ -12,7 +12,7 @@ const RecommendationBookmark = ({ items }) => {
   const handleCardClick = async (item) => {
     console.log('📱 추천 카드 클릭:', item);
 
-    const referenceId = item.id;
+    const referenceId = item.reference_id;
 
     if (!referenceId) {
       console.error('❌ reference_id 없음:', item);
@@ -43,7 +43,7 @@ const RecommendationBookmark = ({ items }) => {
         <div className="dashboard-recent-grid">
           {items.slice(0, 6).map((item) => (
             <div
-              key={item.id}
+              key={item.reference_id}
               className="dashboard-recent-card"
               onClick={() => handleCardClick(item)}
               style={{ cursor: 'pointer' }}
