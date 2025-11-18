@@ -59,7 +59,7 @@ const BookmarkGrid = ({
         <div className="dashboard-bookmark-header">
           <h2 className="dashboard-section-title">
             <Heart size={20} color="#FF6B6B" />
-            내 북마크
+            My Bookmarks
           </h2>
           <div className="dashboard-bookmark-controls">
             <div className="dashboard-filter-group">
@@ -72,26 +72,26 @@ const BookmarkGrid = ({
                 value={bookmarkFilter}
                 onChange={(e) => onChangeFilter(e.target.value)}
               >
-                <option value="전체">전체</option>
-                <option value="명소">명소</option>
-                <option value="음식">음식</option>
-                <option value="K콘텐츠">K콘텐츠</option>
-                <option value="페스티벌">페스티벌</option>
+                <option value="전체">All</option>
+                <option value="명소">Landmark</option>
+                <option value="음식">Food</option>
+                <option value="K콘텐츠">K-content</option>
+                <option value="페스티벌">Festival</option>
               </select>
             </div>
             <div className="dashboard-sort-group">
               <span className="dashboard-control-label">
                 <SortAsc size={14} />
-                정렬
+                Sorting
               </span>
               <select
                 className="dashboard-control-select"
                 value={sortOption}
                 onChange={(e) => onChangeSort(e.target.value)}
               >
-                <option value="최신순">최신순</option>
-                <option value="오래된순">오래된순</option>
-                <option value="이름순">이름순</option>
+                <option value="최신순">Latest</option>
+                <option value="오래된순">Oldest first</option>
+                <option value="이름순">Name Order</option>
               </select>
             </div>
           </div>

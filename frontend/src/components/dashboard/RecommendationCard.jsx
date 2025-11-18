@@ -134,7 +134,7 @@ const UserDashboard = () => {
       <div className="dashboard-header">
         <h1 className="dashboard-title">My Dashboard</h1>
         <p className="dashboard-subtitle">
-          당신의 K-Culture 여행 취향을 분석하고 맞춤 추천을 제공합니다
+          Analyze your K-Culture travel preferences and provide personalized recommendations
         </p>
       </div>
 

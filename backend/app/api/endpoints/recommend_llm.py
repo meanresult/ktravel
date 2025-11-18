@@ -233,7 +233,7 @@ def get_llm_enhanced_recommendations(
         
         for r in results:
             payload = r.payload or {}
-            rec_reference_id = int(payload.get("content_id") or payload.get("id") or r.id)
+            rec_reference_id = payload.get("content_id") or payload.get("id") or r.id
             
             unique_key = f"{bm.place_type}_{rec_reference_id}"
             if unique_key in seen_ids:

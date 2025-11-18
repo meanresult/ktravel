@@ -77,15 +77,15 @@ const UserDashboard = () => {
 
   const tasteAnalysis = {
     categories: [
-      { name: '명소', value: 45, color: '#3853FF' },
-      { name: '음식', value: 30, color: '#FF6B6B' },
-      { name: 'K콘텐츠', value: 15, color: '#4ECDC4' },
-      { name: '페스티벌', value: 10, color: '#FFD93D' },
+      { name: 'Landmark', value: 45, color: '#3853FF' },
+      { name: 'restaurant', value: 30, color: '#FF6B6B' },
+      { name: 'K-content', value: 15, color: '#4ECDC4' },
+      { name: 'Festival', value: 10, color: '#FFD93D' },
     ],
-    topTags: ['카페', '야경', '드라마촬영지', '한옥', '포토스팟'],
-    topLocations: ['서울 성수동', '서울 서촌', '부산 해운대'],
+    topTags: ['Cafe', 'Night View', 'Drama Filming Location', 'Hanok', 'Photo Spot'],
+    topLocations: ['Seoul Seongsu-dong', 'Seoul Seochon', 'Busan Haeundae'],
     analysis:
-      '잔잔한 감성 카페와 야경 명소를 자주 저장하고 있어요. 서울 성수·서촌을 중심으로 여행 테마가 형성되어 있네요.',
+      "I often save cafes with a serene atmosphere and night view spots. My travel themes are centered around Seoul's Seongsu and Seochon neighborhoods.",
   };
 
   const recentRecommendations = [
@@ -137,19 +137,19 @@ const UserDashboard = () => {
     {
       id: 1,
       icon: '☕',
-      message: '한 달 전 저장하신 서촌 감성 카페, 다시 가보고 싶지 않나요?',
+      message: "That charming Seochon cafe you saved a month ago—don't you want to visit it again?",
       link: '/search?area=서촌&category=카페',
     },
     {
       id: 2,
       icon: '🌸',
-      message: '벚꽃 시즌이 곧 시작됩니다. 벚꽃 명소 북마크가 많아요.',
+      message: 'Cherry blossom season is about to begin. I have many bookmarks for cherry blossom spots.',
       link: '/bookmarks?tag=벚꽃',
     },
     {
       id: 3,
       icon: '🎬',
-      message: '최근 관심있던 K-드라마 촬영지, 이번 주말 어떠세요?',
+      message: "How about visiting the filming locations of that K-drama you've been interested in this weekend?",
       link: '/kcontent?type=drama',
     },
   ];
@@ -451,7 +451,7 @@ const UserDashboard = () => {
       <div className="dashboard-header">
         <h1 className="dashboard-title">My Dashboard</h1>
         <p className="dashboard-subtitle">
-          당신의 K-Culture 여행 취향을 분석하고 맞춤 추천을 제공합니다
+          Analyze your K-Culture travel preferences and provide personalized recommendations
         </p>
       </div>
 

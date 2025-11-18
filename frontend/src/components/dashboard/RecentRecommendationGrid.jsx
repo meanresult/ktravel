@@ -37,7 +37,7 @@ const RecentRecommendationGrid = ({ items }) => {
       <div className="dashboard-recent-section">
         <h2 className="dashboard-section-title">
           <Clock size={20} color="#3853FF" />
-          최근 살펴본 콘텐츠 기반으로 추천드려요
+          Recommendations based on recently viewed content
         </h2>
         <div className="dashboard-recent-grid">
           {items.map((item) => (

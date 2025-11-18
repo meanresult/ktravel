@@ -43,7 +43,7 @@ const RecommendedSlider = ({ items, currentSlide, onPrev, onNext }) => {
         <div className="dashboard-slider-header">
           <h2 className="dashboard-section-title">
             <Sparkles size={20} color="#3853FF" />
-            추천 콘텐츠
+            Recommended Content
           </h2>
           <div className="dashboard-slider-controls">
             <button className="dashboard-slider-btn" onClick={onPrev}>

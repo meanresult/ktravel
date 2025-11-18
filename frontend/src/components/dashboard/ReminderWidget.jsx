@@ -6,8 +6,8 @@ const ReminderWidget = ({ reminders }) => {
   return (
     <div className="dashboard-reminder-widget">
       <h3 className="dashboard-widget-header">
-        <Calendar size={18} color="#3853FF" />
-        취향 리마인드
+        <Calendar size={18} color="#e0e0e0ff" />
+        Taste Reminder
       </h3>
       {reminders.map((reminder) => (
         <div key={reminder.id} className="dashboard-reminder-card">

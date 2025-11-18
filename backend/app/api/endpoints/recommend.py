@@ -25,7 +25,7 @@ PLACE_TYPE_COLLECTION_MAP = {
     PlaceType.RESTAURANT: "seoul-restaurant",
     PlaceType.FESTIVAL: "seoul-festival",
     # PlaceType.ATTRACTION: "seoul-attraction",
-    PlaceType.KCONTENT: "seoul-kcontents",
+    PlaceType.KCONTENT: "seoul-kcontent",
 }
 
 

@@ -13,7 +13,7 @@ const TasteAnalysisCard = ({ tasteAnalysis }) => {
     <div className="dashboard-taste-card">
       <h3 className="dashboard-taste-header">
         <TrendingUp size={18} color="#3853FF" />
-        취향 분석
+        Taste Analysis
       </h3>
 
       <div className="dashboard-chart-container">
@@ -65,7 +65,7 @@ const TasteAnalysisCard = ({ tasteAnalysis }) => {
       </div>
 
       <div className="dashboard-taste-section">
-        <div className="dashboard-taste-label">주요 분위기 태그 TOP 5</div>
+        <div className="dashboard-taste-label">Top 5 Key Atmosphere Tags</div>
         <div className="dashboard-taste-tags">
           {tasteAnalysis.topTags.map((tag, idx) => (
             <span key={idx} className="dashboard-taste-tag">
@@ -76,7 +76,7 @@ const TasteAnalysisCard = ({ tasteAnalysis }) => {
       </div>
 
       <div className="dashboard-taste-section">
-        <div className="dashboard-taste-label">자주 방문한 지역</div>
+        <div className="dashboard-taste-label">Frequently visited areas</div>
         <div className="dashboard-taste-tags">
           {tasteAnalysis.topLocations.map((loc, idx) => (
             <span key={idx} className="dashboard-taste-tag">

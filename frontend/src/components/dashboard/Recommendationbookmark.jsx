@@ -38,7 +38,7 @@ const RecommendationBookmark = ({ items }) => {
       <div className="dashboard-recent-section">
         <h2 className="dashboard-section-title">
           <Sparkles size={20} color="#3853FF" />
-          좋아하는 콘텐츠 추천드려요
+          Recommendations for Your Favorite Content
         </h2>
         <div className="dashboard-recent-grid">
           {items.slice(0, 6).map((item) => (
