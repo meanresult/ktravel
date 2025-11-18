@@ -1,46 +1,63 @@
-import React, { useState } from 'react';
+import React from 'react';
+import './Sidebar.css';
 import { Link } from 'react-router-dom';
-import '../../styles/Sidebar.css';
+import { FaStar, FaMusic, FaThLarge, FaCompass, FaCalendar, FaBookmark, FaComments   } from 'react-icons/fa';
 
-const MENU_ITEMS = [
-    { name: '메인 페이지', path: '/' },
-    { name: '축제/공연 목록', path: '/festival' },
-    { name: '여행 플래너', path: '/dashboard' },
-];
 
-function Sidebar() {
-    const [isOpen, setIsOpen] = useState(false);
-
-    const toggleSidebar = () => {
-        setIsOpen(!isOpen);
-    };
-
+const Sidebar = () => {
     return (
-        <>
-            <button className="sidebar-toggle-btn" onClick={toggleSidebar}>
-                {isOpen ? '✕' : '☰'} 
-            </button>
-
-            <div className={`sidebar ${isOpen ? 'open' : ''}`}>
-                <nav className="sidebar-nav">
-                    <ul>
-                        {MENU_ITEMS.map((item) => (
-                            <li key={item.name}>
-                                <Link 
-                                    to={item.path} 
-                                    onClick={toggleSidebar}
-                                >
-                                    {item.name}
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
-                </nav>
+        <div className="sidebar">
+            {/* 상단 헤더 */}
+            <div className="sidebar-header">
+                {/* 햄버거 메뉴 아이콘 */}
+                <div className="menu-icon">
+                </div>
+                {/* 제목 */}
+                <h1>K-Guidance Menu</h1>
             </div>
-            
-            {isOpen && <div className="sidebar-overlay" onClick={toggleSidebar}></div>}
-        </>
+
+                    <li>
+                    <Link to="/" >
+     <FaThLarge />
+    
+   <span>HOME</span> 
+         </Link>
+                    </li>
+                    <li>
+                        <Link to="/chatbot/demon-hunters">
+                            <FaComments />
+                            <span>K-chat</span>
+                        </Link>
+                    </li>
+                    <li>
+                        <Link to="/k-spotlight">
+                            <FaStar />
+                            <span>media Spotlight</span>
+                        </Link>
+                    </li>
+                    <li>
+                        <Link to="/festivals">
+                            <FaMusic />
+                            <span>Concert</span>
+                        </Link>
+                    </li>
+                      <li>
+                        <Link to="/k-pathidea">
+                            <FaCompass />
+                            <span>Schedules</span>
+                        </Link>
+                    </li>
+                    <li>
+                        <Link to="/dashboard">
+                            <FaBookmark />
+                            <span>Recommendation</span>
+                        </Link>
+                    </li>
+                  
+                
+            </div>
+        
     );
-}
+};
 
 export default Sidebar;

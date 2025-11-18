@@ -3,8 +3,6 @@ import { Trash2 } from 'lucide-react';
 import '../styles/ScheduleTable.css';
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-
 const globalFetchWithAuth = async (url, options = {}, token, setToken, setAuthError) => {
     setAuthError(null);
     if (!token) {
@@ -73,7 +71,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
 
         try {
             const response = await fetchWithAuth(
-                `${API_URL}/api/destinations/schedule-table-data?day_title=${encodeURIComponent(selectedDayTitle)}`
+                `http://localhost:8000/api/destinations/schedule-table-data?day_title=${encodeURIComponent(selectedDayTitle)}`
             );
             const data = await response.json();
             
@@ -125,7 +123,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
 
     useEffect(() => {
         if (!token) return;
-        fetchWithAuth(`${API_URL}/api/schedules/day_titles`)
+        fetchWithAuth('http://localhost:8000/api/schedules/day_titles')
             .then(res => res.json())
             .then(data => {
                 setDayTitles(data.map(d => d.day_title));
@@ -140,7 +138,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
     useEffect(() => {
         if (!scheduleId || !token) return;
 
-        fetchWithAuth(`${API_URL}/api/schedules/${scheduleId}`)
+        fetchWithAuth(`http://localhost:8000/api/schedules/${scheduleId}`)
             .then(res => res.json())
             .then(data => {
                 const dayTitle = data.day_title || '';
@@ -154,7 +152,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
     useEffect(() => {
         if (!selectedDayTitle || !token) return;
         fetchWithAuth(
-            `${API_URL}/api/schedules/description?day_title=${encodeURIComponent(selectedDayTitle)}`
+            `http://localhost:8000/api/schedules/description?day_title=${encodeURIComponent(selectedDayTitle)}`
         )
             .then(res => res.json())
             .then(data => {
@@ -163,16 +161,18 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
             .catch(err => console.error("❌ description fetch 실패:", err.message));
     }, [selectedDayTitle, token, fetchWithAuth]);
 
+
     const handleSave = () => {
         if (!selectedDayTitle || !token) return;
 
         fetchWithAuth(
-            `${API_URL}/api/schedules/update_description?day_title=${encodeURIComponent(selectedDayTitle)}&description=${encodeURIComponent(description)}`,
+            `http://localhost:8000/api/schedules/update_description?day_title=${encodeURIComponent(selectedDayTitle)}&description=${encodeURIComponent(description)}`,
             { method: "PUT" }
         )
             .then(res => res.json())
             .then((data) => {
                 console.log("✅ 저장 성공:", data);
+
                 alert('Description is Saved! ✅');
             })
             .catch(err => {
@@ -213,7 +213,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
             });
 
             const response = await fetchWithAuth(
-                `${API_URL}/api/destinations/update-schedule-data`,
+                'http://localhost:8000/api/destinations/update-schedule-data',
                 {
                     method: 'PUT',
                     body: JSON.stringify({
@@ -238,6 +238,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
             setIsSavingTable(false);
         }
     };
+
 
     const handleDayTitleChange = (e) => {
         setSelectedDayTitle(e.target.value);
@@ -370,6 +371,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
                 <div className="kschedule-error-message">
                     <p>🛑 **에러:** {authError}</p>
                     {authError.includes('Login error') && <p>잠시 후 메인 페이지로 이동합니다...</p>}
+
                 </div>
             )}
 
