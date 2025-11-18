@@ -7,6 +7,8 @@ import {
   getCurrentUser,
   PlaceType,
 } from '../services/bookmarkService';
+import KMediaDescription from '../components/KMedia/KMediaDescription';
+import { fetchKContentDetail } from '../components/KMedia/KMediaCardData';
 import { getLlmEnhancedRecommendations } from '../services/recommendLlmService';
 
 // 대시보드용 컴포넌트들
@@ -23,12 +25,15 @@ const UserDashboard = () => {
   const [sortOption, setSortOption] = useState('최신순');
   const [bookmarks, setBookmarks] = useState([]);
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null); // ✅ K-콘텐츠 상세 모달용
   const [isLoadingBookmarks, setIsLoadingBookmarks] = useState(true);
   const [bookmarkError, setBookmarkError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [llmRecommendations, setLlmRecommendations] = useState([]);
   const [isLoadingRecs, setIsLoadingRecs] = useState(true);
   const [recsError, setRecsError] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
+  const [uiItems, setUiItems] = useState([]);
 
   // --- 목 데이터(추천/취향/리마인더) ---
   const recommendedContent = [
@@ -276,7 +281,7 @@ const UserDashboard = () => {
       // data.recommendations 배열을 대시보드에서 쓰기 좋게 매핑
       const mapped = data.recommendations.map((item, idx) => ({
         id: item.reference_id ?? idx,
-        image: item.image_url || '/api/placeholder/400/300',
+        image: item.image_url || item.thumbnail || item.extra?.thumbnail || item.extra?.image_url || '/api/placeholder/400/300',
         title: item.name,
         category: getCategoryFromPlaceType(item.place_type),
         location: item.address || '',
@@ -361,6 +366,56 @@ const UserDashboard = () => {
     }
   };
 
+    // ✅ K-콘텐츠 북마크 클릭 시 상세 모달 열기
+  const handleBookmarkClick = async (bookmark) => {
+    console.log('📱 북마크 카드 클릭:', bookmark);
+
+    // K-콘텐츠가 아닌 경우는 아직 상세 모달을 열지 않음
+    if (bookmark.placeType !== PlaceType.KCONTENT) {
+      console.log('ℹ️ 아직 K-콘텐츠 북마크만 상세 보기 지원:', bookmark.placeType);
+      return;
+    }
+
+    const referenceId = bookmark.referenceId || bookmark.id;
+
+    if (!referenceId) {
+      console.error('❌ reference_id 없음:', bookmark);
+      return;
+    }
+
+    try {
+      // ✅ K-콘텐츠 상세 정보 조회
+      const data = await fetchKContentDetail(referenceId);
+
+      console.log('✅ K-콘텐츠 상세 API 응답:', data);
+
+      // ✅ KMediaDescription에서 기대하는 형태로 변환
+      const detailItem = {
+        id: data.content_id,
+        title: data.location_name_en || data.location_name,
+        title_en: data.location_name_en,
+        title_ko: data.location_name,
+        description: data.drama_desc,
+        location: data.address_en || data.address,
+        thumbnail: data.thumbnail,
+        image_url_list: data.image_url_list || [data.thumbnail],
+        drama_name_en: data.drama_name_en,
+        category_en: data.category_en,
+        keyword_en: data.keyword_en,
+        trip_tip_en: data.trip_tip_en,
+        latitude: data.latitude,
+        longitude: data.longitude,
+      };
+
+      console.log('✅ 변환된 detailItem:', detailItem);
+      setSelectedItem(detailItem);
+    } catch (error) {
+      console.error('❌ 상세 정보 조회 실패:', error);
+      alert('상세 정보를 불러올 수 없습니다: ' + error.message);
+    }
+  };
+
+
   // 슬라이더 이동
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % sliderItems.length);
@@ -432,6 +487,8 @@ const UserDashboard = () => {
           hoveredCard={hoveredCard}
           setHoveredCard={setHoveredCard}
         />
+
+        
 
         <ReminderWidget reminders={tasteReminders} />
       </div>
