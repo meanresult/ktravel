@@ -96,7 +96,7 @@ async def update_schedule_data(
     """
     일정 테이블의 전체 데이터를 저장합니다.
     - 컬럼 순서 저장
-    - 각 행의 데이터 저장 (기존 업데이트 or 신규 생성)
+    - 기존 데이터 삭제 후 새로 생성 (화면에 보이는 것만)
     """
     try:
         # 1. schedule 찾기
@@ -123,12 +123,16 @@ async def update_schedule_data(
         else:
             metadata.column_order = request.column_order
         
-        # 3. 행 데이터 저장
-        updated_count = 0
+        # ✨✨✨ 3. 기존 destination 데이터 모두 삭제 (핵심!) ✨✨✨
+        deleted_count = db.query(Destination).filter(
+            Destination.schedule_id == schedule.schedule_id,
+            Destination.user_id == current_user['user_id']
+        ).delete(synchronize_session=False)
+        
+        # 4. 새로운 행 데이터 생성
         created_count = 0
         
         for row_data in request.rows:
-            destination_id = row_data.get('destination_id')
             location = row_data.get('Location', '').strip()
             
             # Location이 비어있으면 스킵
@@ -141,46 +145,32 @@ async def update_schedule_data(
                 if key not in ['destination_id', 'visit_order', 'Location', 'Notice']:
                     custom_fields[key] = value
             
-            if destination_id:
-                # 기존 destination 업데이트
-                destination = db.query(Destination).filter(
-                    Destination.destination_id == destination_id,
-                    Destination.user_id == current_user['user_id']
-                ).first()
-                
-                if destination:
-                    destination.name = location
-                    destination.notes = row_data.get('Notice', '')
-                    destination.visit_order = row_data.get('visit_order', 0)
-                    destination.custom_fields = custom_fields if custom_fields else None
-                    updated_count += 1
-            else:
-                # 새 destination 생성
-                new_destination = Destination(
-                    user_id=current_user['user_id'],
-                    schedule_id=schedule.schedule_id,
-                    name=location,
-                    notes=row_data.get('Notice', ''),
-                    visit_order=row_data.get('visit_order', 0),
-                    place_type=0,
-                    custom_fields=custom_fields if custom_fields else None
-                )
-                db.add(new_destination)
-                created_count += 1
+            # 항상 새 destination 생성 (destination_id는 무시)
+            new_destination = Destination(
+                user_id=current_user['user_id'],
+                schedule_id=schedule.schedule_id,
+                name=location,
+                notes=row_data.get('Notice', ''),
+                visit_order=row_data.get('visit_order', 0),
+                place_type=0,
+                custom_fields=custom_fields if custom_fields else None
+            )
+            db.add(new_destination)
+            created_count += 1
         
         db.commit()
         
         return {
             "success": True,
-            "message": f"저장 완료 - 업데이트: {updated_count}개, 생성: {created_count}개",
-            "updated": updated_count,
+            "message": f"저장 완료 - 삭제: {deleted_count}개, 생성: {created_count}개",
+            "deleted": deleted_count,
             "created": created_count
         }
         
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"저장 실패: {str(e)}")
-
+    
 # ✅ 기존 엔드포인트
 @router.get("", response_model=List[DestinationResponse])
 async def get_destinations(

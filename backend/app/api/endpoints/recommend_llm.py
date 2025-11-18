@@ -256,7 +256,29 @@ def get_llm_enhanced_recommendations(
                     "score": r.score,
                     "extra": original_data.get("extra", {}),
                 })
-    
+            else:
+                # ✅ recommend.py와 동일한 fallback 추가
+                qdrant_recommendations.append({
+                    "place_type": bm.place_type,
+                    "reference_id": rec_reference_id,
+                    "name": (
+                        payload.get("location_name_en")
+                        or payload.get("location_name")
+                        or payload.get("name")
+                        or "Unknown"
+                    ),
+                    "address": payload.get("address_en") or payload.get("address"),
+                    "image_url": (
+                        payload.get("image_url")
+                        or payload.get("thumbnail")
+                        or payload.get("image")
+                    ),
+                    "latitude": payload.get("latitude"),
+                    "longitude": payload.get("longitude"),
+                    "category": payload.get("category_en") or payload.get("category"),
+                    "score": r.score,
+                    "extra": payload,
+                })
     if not qdrant_recommendations:
         raise HTTPException(status_code=404, detail="추천 결과를 찾지 못했습니다.")
     

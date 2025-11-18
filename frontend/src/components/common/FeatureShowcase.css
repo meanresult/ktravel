@@ -1,0 +1,269 @@
+/* FeatureShowcase.css */
+
+/* ------------------------------- */
+/* 기본 레이아웃 (Mobile-first)    */
+/* ------------------------------- */
+
+.feature-showcase-container {
+  position: relative;
+  width: 100%;
+  max-width: 80rem;
+  margin: 0 auto;
+ 
+}
+
+.feature-card-container {
+  position: relative;
+  margin: 2rem 0;
+}
+
+.feature-card {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.feature-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.25rem;
+}
+
+/* 아이콘 원형 배경 */
+.feature-icon-circle {
+  border-radius: 50%;
+  padding: 1.3rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  transition: transform 0.3s ease;
+}
+
+.feature-icon-circle:hover {
+  transform: scale(1.08);
+}
+
+/* 그라디언트 색상 */
+.gradient-red {
+  background: linear-gradient(135deg, #ef4444 0%, #f43f5e 100%);
+}
+
+.gradient-yellow {
+  background: linear-gradient(135deg, #facc15 0%, #f97316 100%);
+}
+
+.gradient-purple {
+  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+}
+
+.gradient-green {
+  background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
+}
+
+.gradient-blue {
+  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+}
+
+/* 텍스트 */
+.feature-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.feature-description {
+  font-size: 1rem;
+  color: #cbd5e1;
+  line-height: 1.6;
+  max-width: 26rem;
+  margin: 0;
+}
+
+/* 버튼 */
+.feature-button {
+  margin-top: 1rem;
+  padding: 0.65rem 1.5rem;
+  border-radius: 9999px;
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  background: rgba(99, 102, 241, 0.8);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.feature-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* 아이콘 Nav */
+.feature-icon-nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap; /* 작은 화면에서도 균열 방지 */
+  margin-top: 1rem;
+}
+
+.feature-icon-button {
+  position: relative;
+  padding: 0.6rem;
+  border-radius: 1rem;
+  background: rgba(51, 65, 85, 0.5);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.feature-icon-button:hover {
+  background: rgba(51, 65, 85, 1);
+  transform: scale(1.1);
+}
+
+.feature-icon-button.active {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.1);
+}
+
+.feature-icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #94a3b8;
+}
+
+.feature-icon.active svg {
+  color: white;
+}
+
+/* 효과 */
+.feature-icon-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 1rem;
+  filter: blur(20px);
+  opacity: 0.6;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Animation */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ------------------------------- */
+/* 640px 이상 (Tablet 작은 화면)   */
+/* ------------------------------- */
+
+@media (min-width: 640px) {
+  .feature-card {
+    padding: 2rem;
+  }
+
+  .feature-title {
+    font-size: 2rem;
+  }
+
+  .feature-description {
+    font-size: 1.1rem;
+  }
+
+  .feature-icon svg {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+
+  .feature-icon-button {
+    padding: 0.8rem;
+  }
+}
+
+/* ------------------------------- */
+/* 768px 이상 (Tablet 크게)        */
+/* ------------------------------- */
+
+@media (min-width: 768px) {
+  .feature-card-content {
+    gap: 1.8rem;
+  }
+
+  .feature-card {
+    padding: 2.5rem;
+  }
+
+  .feature-title {
+    font-size: 2.25rem;
+  }
+
+  .feature-description {
+    font-size: 1.2rem;
+    max-width: 30rem;
+  }
+
+  .feature-icon svg {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .feature-icon-nav {
+    gap: 1.2rem;
+  }
+
+  .feature-card {
+    width: 110%;
+  }
+}
+
+/* ------------------------------- */
+/* 1024px 이상 (Desktop)           */
+/* ------------------------------- */
+
+@media (min-width: 1024px) {
+  .feature-card {
+    width: 120%;
+    padding: 3rem;
+  }
+
+  .feature-title {
+    font-size: 2.5rem;
+  }
+
+  .feature-description {
+    font-size: 1.25rem;
+  }
+
+  .feature-icon-button {
+    padding: 1rem;
+  }
+
+  .feature-icon svg {
+    width: 2rem;
+    height: 2rem;
+  }
+}

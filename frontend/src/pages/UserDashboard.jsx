@@ -7,6 +7,8 @@ import {
   getCurrentUser,
   PlaceType,
 } from '../services/bookmarkService';
+import KMediaDescription from '../components/KMedia/KMediaDescription';
+import { fetchKContentDetail } from '../components/KMedia/KMediaCardData';
 import { getLlmEnhancedRecommendations } from '../services/recommendLlmService';
 
 // 대시보드용 컴포넌트들
@@ -23,12 +25,15 @@ const UserDashboard = () => {
   const [sortOption, setSortOption] = useState('최신순');
   const [bookmarks, setBookmarks] = useState([]);
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null); // ✅ K-콘텐츠 상세 모달용
   const [isLoadingBookmarks, setIsLoadingBookmarks] = useState(true);
   const [bookmarkError, setBookmarkError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [llmRecommendations, setLlmRecommendations] = useState([]);
   const [isLoadingRecs, setIsLoadingRecs] = useState(true);
   const [recsError, setRecsError] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
+  const [uiItems, setUiItems] = useState([]);
 
   // --- 목 데이터(추천/취향/리마인더) ---
   const recommendedContent = [
@@ -72,15 +77,15 @@ const UserDashboard = () => {
 
   const tasteAnalysis = {
     categories: [
-      { name: '명소', value: 45, color: '#3853FF' },
-      { name: '음식', value: 30, color: '#FF6B6B' },
-      { name: 'K콘텐츠', value: 15, color: '#4ECDC4' },
-      { name: '페스티벌', value: 10, color: '#FFD93D' },
+      { name: 'Landmark', value: 45, color: '#3853FF' },
+      { name: 'restaurant', value: 30, color: '#FF6B6B' },
+      { name: 'K-content', value: 15, color: '#4ECDC4' },
+      { name: 'Festival', value: 10, color: '#FFD93D' },
     ],
-    topTags: ['카페', '야경', '드라마촬영지', '한옥', '포토스팟'],
-    topLocations: ['서울 성수동', '서울 서촌', '부산 해운대'],
+    topTags: ['Cafe', 'Night View', 'Drama Filming Location', 'Hanok', 'Photo Spot'],
+    topLocations: ['Seoul Seongsu-dong', 'Seoul Seochon', 'Busan Haeundae'],
     analysis:
-      '잔잔한 감성 카페와 야경 명소를 자주 저장하고 있어요. 서울 성수·서촌을 중심으로 여행 테마가 형성되어 있네요.',
+      "I often save cafes with a serene atmosphere and night view spots. My travel themes are centered around Seoul's Seongsu and Seochon neighborhoods.",
   };
 
   const recentRecommendations = [
@@ -132,19 +137,19 @@ const UserDashboard = () => {
     {
       id: 1,
       icon: '☕',
-      message: '한 달 전 저장하신 서촌 감성 카페, 다시 가보고 싶지 않나요?',
+      message: "That charming Seochon cafe you saved a month ago—don't you want to visit it again?",
       link: '/search?area=서촌&category=카페',
     },
     {
       id: 2,
       icon: '🌸',
-      message: '벚꽃 시즌이 곧 시작됩니다. 벚꽃 명소 북마크가 많아요.',
+      message: 'Cherry blossom season is about to begin. I have many bookmarks for cherry blossom spots.',
       link: '/bookmarks?tag=벚꽃',
     },
     {
       id: 3,
       icon: '🎬',
-      message: '최근 관심있던 K-드라마 촬영지, 이번 주말 어떠세요?',
+      message: "How about visiting the filming locations of that K-drama you've been interested in this weekend?",
       link: '/kcontent?type=drama',
     },
   ];
@@ -276,7 +281,7 @@ const UserDashboard = () => {
       // data.recommendations 배열을 대시보드에서 쓰기 좋게 매핑
       const mapped = data.recommendations.map((item, idx) => ({
         id: item.reference_id ?? idx,
-        image: item.image_url || '/api/placeholder/400/300',
+        image: item.image_url || item.thumbnail || item.extra?.thumbnail || item.extra?.image_url || '/api/placeholder/400/300',
         title: item.name,
         category: getCategoryFromPlaceType(item.place_type),
         location: item.address || '',
@@ -361,6 +366,56 @@ const UserDashboard = () => {
     }
   };
 
+    // ✅ K-콘텐츠 북마크 클릭 시 상세 모달 열기
+  const handleBookmarkClick = async (bookmark) => {
+    console.log('📱 북마크 카드 클릭:', bookmark);
+
+    // K-콘텐츠가 아닌 경우는 아직 상세 모달을 열지 않음
+    if (bookmark.placeType !== PlaceType.KCONTENT) {
+      console.log('ℹ️ 아직 K-콘텐츠 북마크만 상세 보기 지원:', bookmark.placeType);
+      return;
+    }
+
+    const referenceId = bookmark.referenceId || bookmark.id;
+
+    if (!referenceId) {
+      console.error('❌ reference_id 없음:', bookmark);
+      return;
+    }
+
+    try {
+      // ✅ K-콘텐츠 상세 정보 조회
+      const data = await fetchKContentDetail(referenceId);
+
+      console.log('✅ K-콘텐츠 상세 API 응답:', data);
+
+      // ✅ KMediaDescription에서 기대하는 형태로 변환
+      const detailItem = {
+        id: data.content_id,
+        title: data.location_name_en || data.location_name,
+        title_en: data.location_name_en,
+        title_ko: data.location_name,
+        description: data.drama_desc,
+        location: data.address_en || data.address,
+        thumbnail: data.thumbnail,
+        image_url_list: data.image_url_list || [data.thumbnail],
+        drama_name_en: data.drama_name_en,
+        category_en: data.category_en,
+        keyword_en: data.keyword_en,
+        trip_tip_en: data.trip_tip_en,
+        latitude: data.latitude,
+        longitude: data.longitude,
+      };
+
+      console.log('✅ 변환된 detailItem:', detailItem);
+      setSelectedItem(detailItem);
+    } catch (error) {
+      console.error('❌ 상세 정보 조회 실패:', error);
+      alert('상세 정보를 불러올 수 없습니다: ' + error.message);
+    }
+  };
+
+
   // 슬라이더 이동
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % sliderItems.length);
@@ -396,7 +451,7 @@ const UserDashboard = () => {
       <div className="dashboard-header">
         <h1 className="dashboard-title">My Dashboard</h1>
         <p className="dashboard-subtitle">
-          당신의 K-Culture 여행 취향을 분석하고 맞춤 추천을 제공합니다
+          Analyze your K-Culture travel preferences and provide personalized recommendations
         </p>
       </div>
 
@@ -432,6 +487,8 @@ const UserDashboard = () => {
           hoveredCard={hoveredCard}
           setHoveredCard={setHoveredCard}
         />
+
+        
 
         <ReminderWidget reminders={tasteReminders} />
       </div>
