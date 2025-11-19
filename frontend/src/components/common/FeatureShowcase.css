@@ -1,152 +1,190 @@
-/* FeatureShowcase.css */
+/* ============================================
+   FeatureShowcase.css
+   ============================================ */
 
-/* ------------------------------- */
-/* 기본 레이아웃 (Mobile-first)    */
-/* ------------------------------- */
-
+/* 메인 컨테이너 */
 .feature-showcase-container {
   position: relative;
   width: 100%;
   max-width: 80rem;
   margin: 0 auto;
- 
 }
 
-.feature-card-container {
-  position: relative;
-  margin: 2rem 0;
-}
-
+/* 카드 - 어두운 그라디언트 배경 */
 .feature-card {
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   border-radius: 1.5rem;
-  padding: 1.5rem;
+  padding: 2.5rem;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   width: 100%;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
+.feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 카드 컨텐츠 */
 .feature-card-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 1.25rem;
+  gap: 1.5rem;
 }
 
-/* 아이콘 원형 배경 */
+/* 아이콘 원형 배경 - 완벽한 원 */
 .feature-icon-circle {
   border-radius: 50%;
-  padding: 1.3rem;
+  padding: 1.5rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 5rem;
+  height: 5rem;
+  margin: 0 auto;
 }
 
 .feature-icon-circle:hover {
-  transform: scale(1.08);
+  transform: scale(1.1);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
 }
 
 /* 그라디언트 색상 */
 .gradient-red {
   background: linear-gradient(135deg, #ef4444 0%, #f43f5e 100%);
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
 }
 
 .gradient-yellow {
   background: linear-gradient(135deg, #facc15 0%, #f97316 100%);
+  box-shadow: 0 8px 24px rgba(250, 204, 21, 0.4);
 }
 
 .gradient-purple {
   background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  box-shadow: 0 8px 24px rgba(168, 85, 247, 0.4);
 }
 
 .gradient-green {
   background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
+  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.4);
 }
 
 .gradient-blue {
   background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
 }
 
-/* 텍스트 */
+/* 타이틀 */
 .feature-title {
-  font-size: 1.75rem;
+  font-size: 2rem;
   font-weight: 700;
   color: white;
   margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  line-height: 1.4;
 }
 
+/* 설명 텍스트 */
 .feature-description {
-  font-size: 1rem;
+  font-size: 1.1rem;
   color: #cbd5e1;
-  line-height: 1.6;
-  max-width: 26rem;
+  line-height: 1.8;
+  max-width: 28rem;
   margin: 0;
+  font-weight: 400;
 }
 
-/* 버튼 */
+/* GO 버튼 */
 .feature-button {
   margin-top: 1rem;
-  padding: 0.65rem 1.5rem;
+  padding: 0.75rem 2rem;
   border-radius: 9999px;
   color: white;
   font-weight: 600;
   font-size: 1rem;
   border: none;
   cursor: pointer;
-  background: rgba(99, 102, 241, 0.8);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  display: flex;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  min-width: 120px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .feature-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
-/* 아이콘 Nav */
+.feature-button:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+/* 아이콘 네비게이션 */
 .feature-icon-nav {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap; /* 작은 화면에서도 균열 방지 */
-  margin-top: 1rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
 }
 
 .feature-icon-button {
   position: relative;
-  padding: 0.6rem;
+  padding: 0.75rem;
   border-radius: 1rem;
   background: rgba(51, 65, 85, 0.5);
-  border: none;
+  border: 2px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
 }
 
 .feature-icon-button:hover {
-  background: rgba(51, 65, 85, 1);
-  transform: scale(1.1);
+  background: rgba(51, 65, 85, 0.8);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .feature-icon-button.active {
   background: rgba(255, 255, 255, 0.15);
-  transform: scale(1.1);
+  transform: translateY(-3px) scale(1.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.feature-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .feature-icon svg {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
   color: #94a3b8;
+  transition: color 0.3s ease;
 }
 
 .feature-icon.active svg {
   color: white;
 }
 
-/* 효과 */
+/* Glow 효과 */
 .feature-icon-glow {
   position: absolute;
   inset: 0;
@@ -156,7 +194,19 @@
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-/* Animation */
+/* Active Ring */
+.feature-active-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 1.2rem;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+}
+
+/* ============================================
+   애니메이션
+   ============================================ */
+
 @keyframes pulse-glow {
   0%, 100% {
     opacity: 0.4;
@@ -166,53 +216,22 @@
   }
 }
 
-@keyframes fade-in-up {
+@keyframes fadeIn {
   from {
-    transform: translateY(20px);
     opacity: 0;
+    transform: translateY(20px);
   }
   to {
-    transform: translateY(0);
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* ------------------------------- */
-/* 640px 이상 (Tablet 작은 화면)   */
-/* ------------------------------- */
+/* ============================================
+   반응형 디자인
+   ============================================ */
 
 @media (min-width: 640px) {
-  .feature-card {
-    padding: 2rem;
-  }
-
-  .feature-title {
-    font-size: 2rem;
-  }
-
-  .feature-description {
-    font-size: 1.1rem;
-  }
-
-  .feature-icon svg {
-    width: 1.6rem;
-    height: 1.6rem;
-  }
-
-  .feature-icon-button {
-    padding: 0.8rem;
-  }
-}
-
-/* ------------------------------- */
-/* 768px 이상 (Tablet 크게)        */
-/* ------------------------------- */
-
-@media (min-width: 768px) {
-  .feature-card-content {
-    gap: 1.8rem;
-  }
-
   .feature-card {
     padding: 2.5rem;
   }
@@ -222,31 +241,30 @@
   }
 
   .feature-description {
-    font-size: 1.2rem;
-    max-width: 30rem;
+    font-size: 1.15rem;
   }
 
   .feature-icon svg {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 1.8rem;
+    height: 1.8rem;
   }
 
-  .feature-icon-nav {
-    gap: 1.2rem;
+  .feature-icon-button {
+    padding: 0.85rem;
   }
-
-  .feature-card {
-    width: 110%;
+  
+  .feature-icon-circle {
+    width: 5.5rem;
+    height: 5.5rem;
   }
 }
 
-/* ------------------------------- */
-/* 1024px 이상 (Desktop)           */
-/* ------------------------------- */
+@media (min-width: 768px) {
+  .feature-card-content {
+    gap: 2rem;
+  }
 
-@media (min-width: 1024px) {
   .feature-card {
-    width: 120%;
     padding: 3rem;
   }
 
@@ -255,7 +273,37 @@
   }
 
   .feature-description {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
+    max-width: 32rem;
+  }
+
+  .feature-icon svg {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+
+  .feature-icon-nav {
+    gap: 1.3rem;
+  }
+  
+  .feature-icon-circle {
+    width: 6rem;
+    height: 6rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .feature-card {
+    padding: 3.5rem;
+  }
+
+  .feature-title {
+    font-size: 2.75rem;
+  }
+
+  .feature-description {
+    font-size: 1.3rem;
+    max-width: 35rem;
   }
 
   .feature-icon-button {
@@ -265,5 +313,49 @@
   .feature-icon svg {
     width: 2rem;
     height: 2rem;
+  }
+  
+  .feature-icon-circle {
+    width: 6.5rem;
+    height: 6.5rem;
+  }
+  
+  .feature-button {
+    padding: 0.85rem 2.5rem;
+    font-size: 1.1rem;
+  }
+}
+
+/* ============================================
+   모바일 최적화
+   ============================================ */
+
+@media (max-width: 480px) {
+  .feature-card {
+    padding: 2rem;
+  }
+  
+  .feature-title {
+    font-size: 1.75rem;
+  }
+  
+  .feature-description {
+    font-size: 1rem;
+  }
+  
+  .feature-icon-circle {
+    width: 4.5rem;
+    height: 4.5rem;
+    padding: 1.2rem;
+  }
+  
+  .feature-button {
+    padding: 0.65rem 1.5rem;
+    font-size: 0.95rem;
+    min-width: 100px;
+  }
+  
+  .feature-icon-nav {
+    gap: 0.75rem;
   }
 }

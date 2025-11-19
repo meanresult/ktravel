@@ -14,6 +14,13 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 // ConceptCard 컴포넌트 정의 자체가 제거되었습니다.
 // **********************************************
 
+console.log('=== API_URL DEBUG ===');
+console.log('API_URL:', API_URL);
+console.log('process.env.REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
+console.log('typeof:', typeof process.env.REACT_APP_API_URL);
+console.log('length:', process.env.REACT_APP_API_URL?.length);
+console.log('===================');
+
 const ConceptMainPage = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({

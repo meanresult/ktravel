@@ -2,6 +2,10 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# 빌드 시 환경변수 받기 (중요!)
+ARG REACT_APP_API_URL
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+
 # package.json 및 lock 파일 복사
 COPY package*.json ./
 
