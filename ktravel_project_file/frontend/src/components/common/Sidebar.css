@@ -1,0 +1,122 @@
+/* 전체 사이드바 */
+.sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 40px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 120px;
+    pointer-events: auto;
+    z-index: 999;
+}
+
+
+/* 헤더 숨기기 */
+.sidebar-header {
+    display: none;
+}
+
+/* 메뉴 전체 */
+.menu-list,
+.recent-chats-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* HOME 버튼 Link 래퍼 */
+.new-chat-btn-link {
+    width: 100%;
+    position: relative; /* 툴팁 기준 */
+    display: flex;
+    justify-content: center;
+}
+
+
+
+
+
+/* 공통 아이콘 버튼 스타일 */
+.sidebar a {
+    width: 100%;
+    color: white;
+    text-decoration: none;
+    font-size: 120%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0;
+    position: relative; /* ✨ 툴팁 위치 지정을 위한 기준 설정 */
+}
+
+/* ✨ 텍스트 숨기기 - 툴팁으로 사용 */
+.sidebar a span,
+/* HOME 버튼의 <span> 텍스트도 초기에는 숨깁니다. (React 수정 가정) */
+.new-chat-btn span {
+    display: none; 
+}
+
+
+/* section 제목도 숨긴다 */
+.section-title {
+    display: none;
+}
+
+/* 최근 채팅도 숨기기 */
+.recent-chats-list {
+    display: none;
+}
+/* ------------------ 툴팁 스타일 ------------------ */
+
+/* 툴팁 기본 스타일 */
+.sidebar a span,
+.new-chat-btn span {
+    /* 툴팁으로 사용될 텍스트의 기본 스타일 */
+    position: absolute;
+    /* ✨ 수정: 툴팁의 시작 위치를 사이드바 너비(60px)보다 크게 지정하여 오른쪽으로 밀어냄 */
+    left: 30px; 
+    /* left: 70px; 설정이 오른쪽으로 뜨도록 하는 정확한 값입니다. */
+    top: 50%;
+    transform: translateY(-50%);
+    
+    /* 배경 및 디자인 */
+    background-color: #000000; 
+    color: white;
+    padding: 8px 15px; 
+    border-radius: 6px; 
+    font-size: 16px; 
+    font-weight: 500;
+    
+    /* 툴팁이 잘리지 않도록 z-index와 overflow를 유지 */
+    z-index: 9999; 
+    white-space: nowrap; 
+    pointer-events: none; 
+    
+    /* 숨김 처리 */
+    opacity: 0;
+    visibility: hidden;
+    display: none; 
+    transition: opacity 0.2s, visibility 0.2s;
+}
+
+/* 마우스 호버 시 툴팁 표시 */
+.sidebar a:hover span,
+.new-chat-btn:hover span {
+    opacity: 1;
+    visibility: visible;
+    display: block; 
+}
+
+.menu-list li::marker, 
+.recent-chats-list li::marker,
+.sidebar a::marker { /* 혹시 <a>에도 마커가 있다면 */
+    content: none !important;
+    display: none !important;
+}
+
+.menu-list,
+.recent-chats-list {
+    list-style: none !important;}

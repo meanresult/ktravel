@@ -1,0 +1,215 @@
+/* NAVERMap.css */
+
+/* Tailwind를 대체하는 통합 CSS */
+.map-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  background-color: #f9fafb;
+}
+.map-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 24px;
+  color: #1d4ed8; /* Blue */
+  border-bottom: 4px solid #93c5fd;
+  padding-bottom: 8px;
+  text-align: center;
+}
+.config-box, .search-box, .toolbar, .marker-info-box {
+  margin-bottom: 16px;
+  padding: 16px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 800px;
+}
+.config-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #1f2937;
+}
+.search-box {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.search-input {
+  flex-grow: 1;
+  padding: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+.search-input:focus {
+  border-color: #3b82f6;
+  outline: none;
+}
+.search-button {
+  padding: 12px 20px;
+  background-color: #f59e0b;
+  color: white;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.1s;
+  white-space: nowrap;
+}
+.search-button:hover {
+  background-color: #d97706;
+}
+.search-button:active {
+  transform: scale(0.98);
+}
+.search-message {
+  margin-top: -8px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+.search-message strong {
+  color: #10b981;
+  font-weight: 700;
+}
+.toolbar {
+  display: flex;
+  gap: 12px;
+}
+.toolbar-button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-grow: 1;
+  text-align: center;
+  border: 2px solid transparent;
+  font-size: 0.95rem;
+}
+.toolbar-button.active {
+  box-shadow: 0 0 0 4px #a5b4fc;
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+}
+.toolbar-view { background-color: #e5e7eb; color: #1f2937; }
+.toolbar-add { background-color: #34d399; color: white; }
+.toolbar-delete { background-color: #f87171; color: white; }
+.toolbar-draw { background-color: #3b82f6; color: white; }
+
+.map-container {
+  width: 100%;
+  max-width: 800px;
+  height: 500px;
+  border: 4px solid #3b82f6;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+.map-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(219, 234, 254, 0.9);
+  z-index: 10;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e40af;
+}
+.client-id.loaded { color: #16a34a; font-weight: 700; margin-left: 4px; }
+.client-id.missing { color: #dc2626; font-weight: 700; margin-left: 4px; }
+
+.path-status {
+  margin-top: 12px;
+  padding: 16px;
+  background-color: #f0fdf4;
+  border: 1px solid #d1fae5;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #065f46;
+  word-break: break-all;
+}
+.path-status strong { font-weight: 700; }
+
+/* Modal Styles (Korean for input) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.modal-content {
+  background-color: white;
+  padding: 24px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 8px;
+}
+.modal-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.modal-button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s;
+}
+.modal-button-cancel { background-color: #f3f4f6; color: #4b5563; }
+.modal-button-save { background-color: #3b82f6; color: white; }
+
+.modal-memo-textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  min-height: 80px;
+}
+
+/* 마커 목록 스타일 */
+.list-title { margin-top: 16px; font-size: 1.125rem; font-weight: 600; color: #1f2937; margin-bottom: 8px; }
+.marker-list-container { max-height: 200px; overflow-y: auto; border: 1px solid #f3f4f6; border-radius: 4px; padding: 0 8px; background-color: #f9fafb; }
+.marker-list { list-style: none; padding: 0; margin: 0; }
+.marker-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-size: 0.875rem; transition: background-color 0.1s; }
+.marker-item.selected-path { background-color: #bfdbfe; }
+.marker-item-title { font-weight: 600; color: #1f2937; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.marker-item-coords { font-family: monospace; color: #4f46e5; }
+.marker-item-empty { padding: 12px 0; color: #9ca3af; text-align: center; font-style: italic; }

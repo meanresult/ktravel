@@ -1,0 +1,429 @@
+/* KScheduleTable.css (수정 및 정리된 버전) */
+
+/* 전체 컨테이너 스타일 */
+.kschedule-container {
+    max-width: 1000px;
+    margin: 0px auto;
+    padding: 25px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.kschedule-header {
+    /* 배경색과 패딩 등을 이곳에 추가 (이미지에서 보이는 스타일) */
+    padding: 15px 20px; 
+
+    /* 핵심 수정: 부모를 Flex 컨테이너로 만듭니다. */
+    display: flex; 
+    
+    /* 제목(h1)과 버튼을 양쪽 끝으로 벌립니다. */
+    justify-content: space-between; 
+    
+    /* 수직(세로) 중앙 정렬 */
+    align-items: center; 
+}
+
+/* 2. h1 스타일 수정 및 불필요한 속성 제거 */
+.kschedule-header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #fdf5f5;
+    
+    /* ❌ 여기서는 justify-content 등을 제거합니다. */
+    /* h1 내부의 아이콘과 텍스트 정렬은 유지 */
+    display: flex; 
+    align-items: center; 
+    gap: 10px;
+    
+    /* 이전에 h1에 적용했던 패딩과 정렬 속성은 .kschedule-header로 이동했으므로 제거합니다. */
+    /* margin-bottom이나 padding도 불필요하면 제거합니다. */
+    padding: 0; 
+    margin: 0;
+}
+
+/* 3. Day Title + Description 그룹 박스 (Flexbox 적용) */
+.kschedule-details {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column; /* 기본적으로 세로 배치 (모바일 우선) */
+    gap: 20px; /* 요소 간 세로 간격 */
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+/* 데스크톱/태블릿 (600px 이상)에서 가로 배치 */
+@media (min-width: 600px) {
+    .kschedule-details {
+        flex-direction: row; /* 가로 배치 */
+        gap: 20px; /* 요소 간 가로 간격 */
+    }
+}
+
+/* Day Title 및 Description 컨테이너 기본 스타일 */
+.kschedule-details > div {
+    display: flex;
+    flex-direction: column;
+    width: 100%; /* 모바일에서는 전체 너비 사용 */
+}
+
+/* 데스크톱/태블릿에서 너비 분할 */
+@media (min-width: 600px) {
+    /* Day Title 영역 (20% 또는 고정 너비) */
+    .kschedule-details .day-title-group {
+        width: 30%; 
+        max-width: 250px;
+        flex-shrink: 0; /* 너비가 줄어들지 않도록 고정 */
+    }
+    /* Description + Save 영역 (나머지 공간) */
+    .kschedule-details .description-group {
+        flex-grow: 1; 
+    }
+}
+
+
+/* -- 입력 요소 공통 스타일 -- */
+
+.kschedule-details label {
+    font-weight: 500;
+    color: #fdf5f5; /* 레이블 색상 통일 */
+    margin-bottom: 5px;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+/* Day Title (select) 요소 */
+.kschedule-select {
+    padding: 10px 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+
+/* Description (textarea) 요소 */
+.kschedule-details textarea {
+    /* Description 입력 필드가 Day Title 옆에 오도록 너비를 유연하게 확장 */
+    flex-grow: 1; 
+    min-width: 200px; /* 최소 너비 설정 (필요에 따라 조정) */
+    padding: 11px;
+    border-radius: 10px; /* 이미지와 비슷한 둥근 모양 */
+    border: none;
+    resize: none; /* 크기 조절 방지 */
+}
+
+.kschedule-select:focus,
+.kschedule-details textarea:focus {
+    outline: none;
+    border-color: #409eff;
+    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+}
+
+.kschedule-select {
+    width: 100%;
+    cursor: pointer;
+}
+
+.kschedule-details textarea {
+    width: 100%;
+    resize: vertical;
+    flex-grow: 1; /* Description 영역에서 높이 최대한 차지 */
+}
+
+/* 저장 버튼 (Day Description 저장) */
+.kschedule-btn-success {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex; 
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    background-color: #5cb85c;
+    color: white;
+    border: none;
+    transition: background-color 0.2s, transform 0.1s;
+    
+    /* 오른쪽 정렬 */
+    margin-top: 10px;
+    margin-left: auto; /* ⭐ 오른쪽 정렬 핵심 */
+    width: auto; /* 내용만큼 너비 조정 */
+}
+.kschedule-btn-success:hover {
+    background-color: #4cae4c;
+    transform: translateY(-1px);
+}
+
+/* 5. 일정 테이블 */
+.kschedule-table-wrapper {
+    width: 100%;
+    overflow-x: auto; /* ✅ 가로 스크롤 표시 */
+    padding-bottom: 10px;
+    white-space: nowrap; /* ✅ 셀이 줄바꿈으로 떨어지지 않도록 */
+}
+
+.kschedule-table {
+    min-width: 700px; /* ✅ 기본 테이블 최소 너비 설정(값 조절 가능) */
+    width: auto;
+    border-collapse: collapse;
+}
+
+.kschedule-table th, .kschedule-table td {
+    border: 1px solid #2e1515;
+    padding: 0;
+    height: 40px;
+    text-align: center;
+    box-sizing: border-box;
+    min-width: 120px;
+}
+
+.kschedule-table thead th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+    color: #333;
+    padding: 10px 0;
+}
+
+/* '시간' 헤더 및 셀 */
+.kschedule-table th:first-child,
+.kschedule-table .kschedule-time-cell {
+    width: 80px;
+    color: #333;
+    background-color: #f5f5f5;
+    font-weight: 500;
+}
+
+/* 실제 일정 셀 */
+.kschedule-schedule-cell {
+    background-color: #ffffff;
+    cursor: pointer;
+    transition: background-color 0.1s;
+}
+
+.kschedule-schedule-cell:hover {
+    background-color: #f0f0f0;
+}
+
+/* 테이블 하단의 점 세개 */
+.kschedule-table-dots {
+    text-align: right;
+    margin-top: 5px;
+    font-size: 18px;
+    color: #999;
+}
+
+/* Day Title 선택 */
+.kschedule-select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    width: 200px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    background-color: #fff;
+    color: #333;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.kschedule-select:hover {
+    border-color: #409eff;
+}
+
+/* Description textarea */
+.kschedule-textarea {
+    width: 100%;
+    max-width: 300px;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    box-sizing: border-box;
+    resize: vertical;
+    margin-bottom: 10px;
+    transition: border-color 0.2s;
+}
+
+.kschedule-textarea:focus {
+    outline: none;
+    border-color: #409eff;
+}
+
+/* 저장 버튼 (Day Description 저장) */
+.kschedule-btn-success {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 200;
+    border-radius: 4px;
+    cursor: pointer;
+    
+    /* 1. 너비를 내용만큼만 차지하도록 유지 */
+    display: inline-flex; 
+    
+    align-items: center;
+    gap: 5px;
+    background-color: #5cb85c;
+    color: white;
+    border: none;
+    transition: background-color 0.2s;
+    
+    /* 2. 오른쪽 정렬을 위해 왼쪽 마진을 자동으로 설정 */
+    margin-left: auto;
+}
+
+.kschedule-btn-success:hover {
+    background-color: #4cae4c;
+}
+
+/* Day Title + Description 그룹 박스 */
+.kschedule-details {
+    display: flex;
+    gap: 20px; 
+    align-items: center; 
+}
+
+/* 툴바 컨테이너: 버튼을 가로로 정렬 */
+.kschedule-toolbar {
+    display: flex;
+    flex-wrap: wrap; /* 버튼이 많아지면 줄바꿈 처리 */
+    gap: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+/* 기본 버튼 스타일 */
+.kschedule-btn-primary,
+.kschedule-btn-danger,
+.kschedule-btn-secondary,
+.kschedule-btn-secondary-danger,
+.kschedule-btn-info {
+    padding: 10px 23px;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    color: white;
+    transition: background-color 0.2s;
+    display: flex; /* 아이콘과 텍스트 중앙 정렬 */
+    align-items: center;
+    gap: 3px;
+    font-size: 1rem;
+}
+
+/* 행 추가 버튼 */
+.kschedule-btn-primary {
+    background-color: #b28f10;
+}
+/* 행 삭제 모드 버튼 (동적 스타일은 JSX 인라인 스타일에 있음) */
+.kschedule-btn-danger {
+    background-color: #eb7878; 
+}
+
+/* 열 추가 버튼 */
+.kschedule-btn-secondary {
+    background-color: #5ea5b5; /* 회색 계열 */
+}
+.kschedule-btn-secondary:hover {
+    background-color: #3a3a3a;
+}
+
+/* 열 삭제 버튼 */
+.kschedule-btn-secondary-danger {
+    background-color: #8aa558; /* 어두운 빨강 계열 */
+}
+.kschedule-btn-secondary-danger:hover {
+    background-color: #6a1a1a;
+}
+
+/* CSV 다운로드 버튼 */
+.kschedule-btn-info {
+    background-color: hsl(217, 67%, 66%);
+    margin-left: 0;
+}
+
+/* --- ⭐ 행 삭제 모드 관련 스타일 ⭐ --- */
+
+/* 시간 셀 (Time) 클릭 가능하도록 커서 변경 */
+.kschedule-time-cell-deletable {
+    cursor: pointer;
+    background-color: #ffeaea; /* 삭제 가능한 셀 배경 강조 */
+    font-weight: bold;
+    color: #cc0000;
+    transition: background-color 0.2s;
+}
+
+/* 삭제 모드일 때 시간 셀 호버 효과 */
+.kschedule-time-cell-deletable:hover {
+    background-color: #ffcaca;
+}
+
+/* 테이블 헤더의 Time 부분에도 삭제 모드 강조 (선택 사항) */
+.kschedule-table th.kschedule-delete-mode {
+    color: #cc0000;
+}
+
+/* 셀 입력 필드 스타일 */
+.kschedule-cell-input {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #e0e0e0;
+    border-radius: 3px;
+    font-size: 14px;
+    box-sizing: border-box;
+    background-color: #ffffff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.kschedule-cell-input:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
+.kschedule-cell-input::placeholder {
+    color: #999;
+    font-size: 13px;
+}
+
+/* 셀 자체의 패딩 조정 */
+.kschedule-schedule-cell {
+    padding: 4px;
+}
+
+
+/* ScheduleTable.css에 추가 */
+.kschedule-table tr {
+    /* 드래그 중 레이아웃 유지에 도움 */
+    display: table-row !important; 
+}
+
+/* 드래그 중인 열 헤더 (th)가 table-cell 속성을 유지하도록 보장 */
+.kschedule-table thead th {
+    display: table-cell !important;
+}
+
+.kschedule-btn-success_ok {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex; 
+    align-items: center;
+    
+    /* ❌ 수정 전: justify-content: flex-start; 또는 center; */
+    /* ✅ 수정 후: 내용을 끝점(오른쪽)으로 정렬 */
+    justify-content: flex-end; /* 이 속성을 flex-end로 변경 */
+    margin-left: auto;
+    gap: 5px;
+    background-color: #5cb85c;
+    color: white;
+    border: none;
+    transition: background-color 0.2s, transform 0.1s;
+}

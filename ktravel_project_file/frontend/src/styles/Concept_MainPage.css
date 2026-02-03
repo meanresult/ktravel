@@ -1,0 +1,496 @@
+/* =============================
+    Concept_MainPage.css (모든 스타일 통합) - 문제 해결 최종 버전
+============================= */
+
+/* =============================
+    기본 설정
+============================= */
+html, body {
+    width: 100%;
+    overflow-x: hidden;
+    font-family: Arial, sans-serif;
+    background-color: #1a1a2e;
+    color: #f0f0f0;
+}
+
+/* =============================
+    전체 컨테이너
+============================= */
+.login-page-container {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+    margin-left: 0;
+    transition: margin-left 0.3s ease;
+}
+
+/* =============================
+    왼쪽 메인 콘텐츠
+============================= */
+.main-content-area {
+    flex: 8; 
+    padding: 25px 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+.main-content-area .page-header { 
+    background: transparent;
+}
+
+/* K-Guidance 제목 스타일 */
+.page-header .header-title {
+    font-size: 30px;
+    color: #f5f2f2;
+    text-align: left;
+}
+
+
+.main-welcome-title {
+    font-size: 60px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.welcome-text {
+    font-size: 30px;
+    color: #b0b0c0;
+    line-height: 1.5;
+    text-align: center;
+    margin-bottom: 10px; 
+}
+
+/* =============================
+    로그인 후 사용자 정보
+============================= */
+.user-info-display {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px 20px;
+    border-radius: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 100;
+}
+
+.user-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.logout-button {
+    background: #ff4757;
+    color: white;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.logout-button:hover {
+    background: #ff3838;
+}
+
+/* =============================
+    컨셉 선택 (동영상 영역)
+============================= */
+.concept-selection {
+    margin-top: 0px; 
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /* ✨ 수정/추가: 왼쪽 내부 여백을 확보 (컨테이너 전체가 안쪽으로 밀려남) */
+    padding-left: 100px; 
+}
+
+.concept-prompt {
+    font-size: 30px;
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 30px;
+    color: #ecf0f1; 
+    
+    /* 텍스트 네온 효과 */
+    text-shadow: 
+        0 0 5px #7434db, 
+        0 0 10px #db34cd, 
+        0 0 20px #84068f, 
+        0 0 40px #2980b9; 
+}
+
+/* -----------------------------
+    동영상 스타일 및 애니메이션
+----------------------------- */
+
+/* 동영상 컨테이너: 라운드 처리와 오버플로우 숨김 담당 */
+.video-container {
+        border-radius: 100px; /* 아주 둥글게 */
+        overflow: hidden; /* 자식 요소가 컨테이너 경계를 넘어가지 않도록 */
+        
+            /* ✨ 수정: 왼쪽 정렬을 위해 margin: 0 auto; 제거 */
+        margin-top: 30px; 
+        margin-bottom: 60px; 
+            /* 왼쪽 마진을 0으로 설정하여 왼쪽으로 붙임 */
+        margin-left: 50; 
+            
+        max-width: 350px; /* width="30%"의 실제 최대 크기 제한 */
+        }
+
+.chatbot-video {
+    /* 초기 상태: 애니메이션 시작 전에 투명하고 작게 설정하여 깜빡임 방지 */
+    opacity: 0; 
+    transform: scale(0.8) translateY(20px); 
+    
+    /* 1. 투명도 조절 (불투명도 낮추기) */
+    opacity: 0.7; 
+
+    /* 2. 모서리 둥글게 처리 (border-radius는 컨테이너에 있으므로 여기서는 overflow:hidden만) */
+    overflow: hidden; 
+
+    /* 3. 팝 인 애니메이션 적용 */
+    animation: pop-in 1s ease-out forwards;
+    
+    /* 기타 필수 속성 */
+    width: 100%; /* 부모 컨테이너 크기에 맞춤 */
+    height: auto;
+}
+
+@keyframes pop-in {
+    /* 0% (시작 지점): 투명하고, 크기가 작고, 살짝 아래에 위치 */
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(20px);
+    }
+    /* 100% (끝 지점): 완전히 나타나고, 원래 크기로 돌아오고, 제자리에 위치 */
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+
+/* =============================
+    오른쪽 로그인 영역 
+============================= */
+.login-form-sidebar {
+    flex: 2.5;
+    min-width: 320px; 
+    background-color: #2a2a44;
+    padding: 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+.login-box {
+    width: 100%;
+    max-width: 420px;
+}
+
+.login-title {
+    font-size: 30px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.login-subtitle {
+    font-size: 17px;
+    color: #b0b0c0;
+    margin-bottom: 30px;
+}
+
+.login-form label {
+    display: block;
+    font-size: 14px;
+    color: #b0b0c0;
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+.text-input {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: 1px solid #444466;
+    background-color: #1a1a2e;
+    color: #f0f0f0;
+    font-size: 16px;
+}
+
+.password-input-wrapper {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #b0b0c0;
+}
+
+.remember-forgot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 15px 0 30px;
+    font-size: 14px;
+}
+
+.forgot-password {
+    color: #8e44ad;
+    text-decoration: none;
+}
+
+/* 체크박스 */
+.checkbox-container {
+    position: relative;
+    padding-left: 25px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #b0b0c0;
+}
+.checkbox-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+.checkmark {
+    position: absolute;
+    top: 0; left: 0;
+    width: 16px; height: 16px;
+    background-color: #1a1a2e;
+    border: 1px solid #444466;
+    border-radius: 4px;
+}
+.checkbox-container input:checked ~ .checkmark {
+    background-color: #8e44ad;
+    border-color: #8e44ad;
+}
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+.checkbox-container input:checked ~ .checkmark:after {
+    display: block;
+}
+.checkbox-container .checkmark:after {
+    left: 5px; top: 1px;
+    width: 5px; height: 10px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    transform: rotate(45deg);
+}
+
+/* =============================
+    버튼 & 에러 메시지
+============================= */
+.error-message-box {
+    background-color: #fee2e2;
+    color: #991b1b;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border: 1px solid #fecaca;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.error-close-button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #991b1b;
+    padding: 0 4px;
+}
+
+.sign-in-button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(90deg,#9933cc,#ff66b2);
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+    transition: opacity 0.2s; 
+}
+
+.sign-in-button:hover { 
+    opacity: 0.9; 
+}
+
+.sign-in-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.social-login-divider {
+    text-align: center;
+    margin: 20px 0;
+    font-size: 14px;
+    color: #b0b0c0;
+    position: relative;
+}
+.social-login-divider span {
+    background-color: #2a2a44;
+    padding: 0 10px;
+    position: relative;
+    z-index: 2;
+}
+.social-login-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 0; right: 0;
+    height: 1px;
+    background-color: #444466;
+    z-index: 1;
+}
+
+.sign-up-prompt {
+    text-align: center;
+    font-size: 14px;
+    margin-top: 40px;
+    color: #b0b0c0;
+}
+.sign-up-link {
+    color: #8e44ad;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+
+/* =============================
+    텍스트 등장 효과
+============================= */
+.fade-in-text {
+    opacity: 0;
+    animation: fadeInUp 0.9s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(25px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 등장 순서 딜레이 미세 조정 */
+.fade-in-delay-1 { animation-delay: 0.2s; }
+.fade-in-delay-2 { animation-delay: 0.4s; }
+.fade-in-delay-3 { animation-delay: 0.6s; }
+.fade-in-delay-4 { animation-delay: 0.8s; }
+.fade-in-delay-5 { animation-delay: 1s; }
+
+
+/* 1. 'K' 글자에 빛 효과 적용 */
+.glow-k {
+    text-shadow:
+        0 0 5px #df0e20, 
+        0 0 10px #e20e0e,
+        0 0 20px #ce0c0c;
+}
+
+/* 2. 'AI' 글자에 빛 효과 적용 */
+.glow-ai {
+    text-shadow:
+        0 0 5px #090df1, 
+        0 0 15px #0919f0,
+        0 0 30px #0616f0;
+}
+
+
+/* =============================
+    반응형
+============================= */
+@media (max-width: 1200px) {
+    .main-content-area {
+        padding: 60px 50px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .login-page-container {
+        flex-direction: column; 
+        min-height: auto; 
+    }
+    
+    .main-content-area, .login-form-sidebar {
+        width: 100%;
+        flex: none; 
+        margin: 0 !important; 
+        max-width: none !important;
+        min-width: 0;
+        padding: 40px 10px;
+    }
+    
+    .login-form-sidebar {
+        min-width: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content-area {
+        padding: 30px 20px;
+    }
+    .main-welcome-title { font-size: 45px; }
+    .welcome-text { font-size: 22px; }
+    .concept-prompt { font-size: 20px; }
+}
+
+@media (max-width: 480px) {
+    .main-welcome-title { font-size: 36px; }
+    .welcome-text { font-size: 16px; }
+    .concept-prompt { font-size: 20px; }
+}
+
+/* FeatureShowcase.css 또는 해당 CSS 파일에 추가/수정 */
+
+/* 🚨 1. 수직 배치 및 중앙 정렬을 위한 래퍼 스타일 */
+.vertical-link-wrapper {
+    display: flex; /* Flexbox 활성화 */
+    flex-direction: column; /* 자식 요소들을 수직으로 배치 */
+    align-items: center; /* 가로 중앙 정렬 */
+    text-decoration: none;
+    color: white; /* 텍스트 색상 상속 */
+    /* 너비를 300px로 제한하여 비디오 너비와 맞추거나, 
+       텍스트가 길 경우 max-width를 지정하여 조절하세요. */
+    width: 300px; 
+}
+
+/* 🚨 2. 상단 텍스트 블록 스타일 */
+.text-top-block {
+    /* 비디오 컨테이너 위에 나타나는 텍스트 */
+   /* 비디오와의 간격 */
+    font-size: 2rem; /* 원하는 크기로 조정 */
+    font-weight: bold;
+    text-align: center;
+        text-shadow: 
+        0 0 5px #7434db, 
+        0 0 10px #db34cd, 
+        0 0 20px #84068f, 
+        0 0 40px #2980b9; 
+}
+
+
