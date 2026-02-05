@@ -1,4 +1,4 @@
-# ✈ K-Guidance: 외국인을 위한 K-여행 가이드 서비스
+# ✈ K-Guidance: 외국인 타켓 K-미디어 기반 여행지 추천 챗봇 서비스
 
 > **저장소 주소:** https://github.com/whynotsw-camp/wh07-3rd-kguidence.git
 > 
@@ -10,7 +10,7 @@
 
 ---
 
-## 🖤 짱구같은 팀원소개 🖤
+## 팀원소개 
 <table>
 <tr>
   <td align="center">
